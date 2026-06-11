@@ -1,32 +1,22 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
-import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined'
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined'
 
-const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
   const navigate = useNavigate()
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const menuItems = [
     { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
-    { key: 'categories', label: 'Categories', icon: <CategoryOutlinedIcon fontSize="small" /> },
-    { key: 'users', label: 'Users', icon: <GroupOutlinedIcon fontSize="small" /> },
-    { key: 'admins', label: 'Admins', icon: <AdminPanelSettingsOutlinedIcon fontSize="small" /> },
     { key: 'providers', label: 'Providers', icon: <WorkOutlineOutlinedIcon fontSize="small" /> },
     { key: 'bookings', label: 'Bookings', icon: <CalendarMonthOutlinedIcon fontSize="small" /> },
     { key: 'reviews', label: 'Reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
-    { key: 'locations', label: 'Locations', icon: <LocationOnOutlinedIcon fontSize="small" /> },
   ]
 
   const handleLogout = () => {
@@ -35,41 +25,33 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
     navigate('/login')
   }
 
-  const handleMenuClick = (key) => {
-    if (setActiveTab) setActiveTab(key)
-    // close mobile sidebar after click
-    setMobileOpen(false)
-  }
-
-  // on mobile, sidebar is controlled by mobileOpen
-  // on desktop, sidebar is controlled by collapsed
-  const isOpen = window.innerWidth >= 768 ? true : mobileOpen
-
   return (
     <>
-      {/* Mobile overlay */}
-      {mobileOpen && (
+      {/* Mobile overlay backdrop */}
+      {!collapsed && (
         <div
           className="fixed inset-0 z-20 bg-black/50 md:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setCollapsed(true)}
         />
       )}
 
       {/* Sidebar */}
       <aside
+        style={{
+          width: collapsed ? '0px' : '17rem',
+          minWidth: collapsed ? '0px' : undefined,
+        }}
         className={`
           sidebar-col
           flex flex-col bg-black text-white
           border-r border-white/10
           transition-all duration-300
           fixed top-0 left-0 z-30
-          md:relative md:z-auto
-          ${mobileOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72'}
-          md:translate-x-0
-          ${collapsed ? 'md:w-[4.5rem]' : 'md:w-72'}
+          md:relative md:z-auto md:translate-x-0
+          ${collapsed ? '-translate-x-full md:translate-x-0 md:!w-[4.5rem]' : 'translate-x-0'}
         `}
       >
-        {/* Logo + desktop toggle */}
+        {/* Logo + toggle */}
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
           {!collapsed && (
             <Link to="/" className="flex items-center gap-3 overflow-hidden">
@@ -86,9 +68,9 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
               </span>
             </Link>
           )}
-          {/* toggle - desktop only */}
+          {/* toggle button - visible on desktop */}
           <button
-            className="ml-auto hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl hover:bg-white/10 transition md:flex"
+            className="ml-auto hidden shrink-0 items-center justify-center h-8 w-8 rounded-xl hover:bg-white/10 transition md:flex"
             onClick={() => setCollapsed(!collapsed)}
             title="Toggle sidebar"
           >
@@ -103,13 +85,13 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
         {!collapsed && (
           <div className="shrink-0 px-4 py-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-400">
-              <SecurityOutlinedIcon style={{ fontSize: 13 }} />
-              Super Admin
+              <AdminPanelSettingsOutlinedIcon style={{ fontSize: 13 }} />
+              Admin Panel
             </span>
           </div>
         )}
 
-        {/* Nav - scrollable area only */}
+        {/* Nav - this is the scrollable area */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2">
           {!collapsed && (
             <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
@@ -118,7 +100,7 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
           )}
           <div className="flex flex-col gap-1">
             {menuItems.map((item) => {
-              const isActive = activeTab === item.key
+              const isActive = activeTab === item.key || activeTab === 'providerBookings' && item.key === 'providers'
               return (
                 <button
                   key={item.key}
@@ -128,7 +110,11 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
                       : 'text-zinc-400 hover:bg-white/10 hover:text-white'
                   } ${collapsed ? 'justify-center' : ''}`}
                   type="button"
-                  onClick={() => handleMenuClick(item.key)}
+                  onClick={() => {
+                    setActiveTab(item.key)
+                    // close sidebar on mobile after click
+                    if (window.innerWidth < 768) setCollapsed(true)
+                  }}
                   title={collapsed ? item.label : ''}
                 >
                   <span className={`shrink-0 ${isActive ? 'text-black' : ''}`}>{item.icon}</span>
@@ -152,11 +138,11 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
         </div>
       </aside>
 
-      {/* Mobile hamburger button */}
-      {!mobileOpen && (
+      {/* Mobile menu open button (shown when sidebar is closed) */}
+      {collapsed && (
         <button
           className="fixed top-4 left-4 z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-black text-white shadow-lg md:hidden"
-          onClick={() => setMobileOpen(true)}
+          onClick={() => setCollapsed(false)}
         >
           <MenuOutlinedIcon fontSize="small" />
         </button>
@@ -165,4 +151,4 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
   )
 }
 
-export default SuperAdminSidebar
+export default AdminSidebar

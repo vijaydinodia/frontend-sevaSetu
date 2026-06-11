@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
@@ -13,6 +13,7 @@ import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import API_URL from '../api'
 import SuperAdminSidebar from '../components/SuperAdminSidebar'
+import EditProfileModal from '../components/EditProfileModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
@@ -32,6 +33,7 @@ const SuperAdminDashborad = () => {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
+  const [showEditProfile, setShowEditProfile] = useState(false)
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
@@ -241,10 +243,11 @@ const SuperAdminDashborad = () => {
   ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8ebe6] md:flex-row">
+    <>
+    <div className="dashboard-shell">
       <SuperAdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="flex-1 p-5 md:p-8">
+      <main className="main-col p-5 md:p-8">
         <header className="mb-6 flex flex-col gap-4 rounded-[28px] bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-white">
@@ -261,12 +264,10 @@ const SuperAdminDashborad = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link to="/super-admin-edit-profile">
-              <Button variant="outline">
-                <PersonOutlineOutlinedIcon fontSize="small" />
-                Profile
-              </Button>
-            </Link>
+            <Button variant="outline" onClick={() => setShowEditProfile(true)}>
+              <PersonOutlineOutlinedIcon fontSize="small" />
+              Edit Profile
+            </Button>
             <Button onClick={handleLogout}>
               <LogoutOutlinedIcon fontSize="small" />
               Logout
@@ -420,6 +421,20 @@ const SuperAdminDashborad = () => {
         )}
       </main>
     </div>
+
+    {/* Edit Profile Modal */}
+    {showEditProfile && (
+      <EditProfileModal
+        onClose={() => setShowEditProfile(false)}
+        onSuccess={(updatedUser) => {
+          setProfile(updatedUser)
+          setShowEditProfile(false)
+        }}
+        uploadEndpoint={`${API_URL}/superadmin/upload/image`}
+        profileEndpoint={`${API_URL}/superadmin/profile`}
+      />
+    )}
+  </>
   )
 }
 
