@@ -12,15 +12,27 @@ import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlin
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined'
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined'
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined'
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined'
+import RestoreFromTrashOutlinedIcon from '@mui/icons-material/RestoreFromTrashOutlined'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import API_URL from '../api'
 import AdminSidebar from '../components/AdminSidebar'
 import EditProfileModal from '../components/EditProfileModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import { capitalize, capitalizeWords } from '../lib/utils'
+import UseView from '../custom_hook/UseView'
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined'
+import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
 
 const AdminDashborad = () => {
   const navigate = useNavigate()
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}')
+
+  const providersView = UseView('admin_providers', 'table')
+  const bookingsView = UseView('admin_bookings', 'table')
+  const reviewsView = UseView('admin_reviews', 'card')
 
   const [activeTab, setActiveTab] = useState('dashboard')
   const [profile, setProfile] = useState(savedUser)
@@ -45,6 +57,21 @@ const AdminDashborad = () => {
   const [locationForm, setLocationForm] = useState({ city: '', state: '', district: '', pincodes: '' })
   const [locationLoading, setLocationLoading] = useState(false)
 
+  // Providers tab search & sort states
+  const [providerSearch, setProviderSearch] = useState('')
+  const [providerSort, setProviderSort] = useState('ratingHigh')
+
+  // Bookings tab search & sort states
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [bookingSort, setBookingSort] = useState('dateNewest')
+
+  // Reviews tab search & sort states
+  const [reviewSearch, setReviewSearch] = useState('')
+  const [reviewSort, setReviewSort] = useState('ratingHigh')
+
+  // Locations tab search & sort states
+  const [locationSearch, setLocationSearch] = useState('')
+
   const token = localStorage.getItem('token')
 
   const getHeaders = () => ({
@@ -53,8 +80,79 @@ const AdminDashborad = () => {
 
   const getUserName = (item) => {
     const u = item?.user || item
-    return `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || u?.email || 'N/A'
+    const fullName = `${u?.firstName || ''} ${u?.lastName || ''}`.trim()
+    return fullName ? capitalizeWords(fullName) : (u?.email || 'N/A')
   }
+
+  // Filter and sort providers
+  const filteredAndSortedProviders = providers
+    .filter((p) => {
+      const q = providerSearch.toLowerCase().trim()
+      if (!q) return true
+      const pName = `${p.user?.firstName || ''} ${p.user?.lastName || ''}`.toLowerCase()
+      const pEmail = p.user?.email?.toLowerCase() || ''
+      const pBusiness = p.businessName?.toLowerCase() || ''
+      const pCat = p.category?.name?.toLowerCase() || ''
+      const pKyc = p.kycStatus?.toLowerCase() || ''
+      return pName.includes(q) || pEmail.includes(q) || pBusiness.includes(q) || pCat.includes(q) || pKyc.includes(q)
+    })
+    .sort((a, b) => {
+      if (providerSort === 'ratingHigh') return (b.averageRating || 0) - (a.averageRating || 0)
+      if (providerSort === 'ratingLow') return (a.averageRating || 0) - (b.averageRating || 0)
+      if (providerSort === 'experienceHigh') return (b.experience || 0) - (a.experience || 0)
+      if (providerSort === 'experienceLow') return (a.experience || 0) - (b.experience || 0)
+      if (providerSort === 'nameAsc') return (a.businessName || '').localeCompare(b.businessName || '')
+      return 0
+    })
+
+  // Filter and sort bookings
+  const filteredAndSortedBookings = bookings
+    .filter((b) => {
+      const q = bookingSearch.toLowerCase().trim()
+      if (!q) return true
+      const bNo = b.bookingNumber?.toString() || ''
+      const cName = getUserName(b.customer).toLowerCase()
+      const pName = getUserName(b.provider).toLowerCase()
+      const bCity = b.city?.toLowerCase() || ''
+      const bStatus = b.status?.toLowerCase() || ''
+      return bNo.includes(q) || cName.includes(q) || pName.includes(q) || bCity.includes(q) || bStatus.includes(q)
+    })
+    .sort((a, b) => {
+      if (bookingSort === 'dateNewest') return new Date(b.bookingDate) - new Date(a.bookingDate)
+      if (bookingSort === 'dateOldest') return new Date(a.bookingDate) - new Date(b.bookingDate)
+      if (bookingSort === 'amountHigh') return b.amount - a.amount
+      if (bookingSort === 'amountLow') return a.amount - b.amount
+      return 0
+    })
+
+  // Filter and sort reviews
+  const filteredAndSortedReviews = reviews
+    .filter((r) => {
+      const q = reviewSearch.toLowerCase().trim()
+      if (!q) return true
+      const cName = getUserName(r.customer).toLowerCase()
+      const pName = getUserName(r.provider).toLowerCase()
+      const rText = r.review?.toLowerCase() || ''
+      const rRating = r.rating?.toString() || ''
+      return cName.includes(q) || pName.includes(q) || rText.includes(q) || rRating === q
+    })
+    .sort((a, b) => {
+      if (reviewSort === 'ratingHigh') return b.rating - a.rating
+      if (reviewSort === 'ratingLow') return a.rating - b.rating
+      return 0
+    })
+
+  // Filter locations
+  const filteredLocations = locations
+    .filter((loc) => {
+      const q = locationSearch.toLowerCase().trim()
+      if (!q) return true
+      const lCity = loc.city?.toLowerCase() || ''
+      const lState = loc.state?.toLowerCase() || ''
+      const lDistrict = loc.district?.toLowerCase() || ''
+      const lPins = loc.pincodes ? loc.pincodes.map(p => (p.pincode || p).toString()).join(' ') : ''
+      return lCity.includes(q) || lState.includes(q) || lDistrict.includes(q) || lPins.includes(q)
+    })
 
   // fetch all data from admin endpoints
   const fetchData = async () => {
@@ -465,6 +563,7 @@ const AdminDashborad = () => {
                       className="h-full w-full rounded-2xl object-cover"
                       src={profile.profileImage}
                       alt="profile"
+                      loading="lazy"
                     />
                   ) : (
                     <PersonOutlineOutlinedIcon fontSize="medium" />
@@ -778,6 +877,7 @@ const AdminDashborad = () => {
                                 src={doc.url}
                                 alt={doc.label}
                                 className="h-40 w-full rounded-xl object-cover hover:opacity-90"
+                                loading="lazy"
                               />
                             </a>
                           ) : (
@@ -799,7 +899,48 @@ const AdminDashborad = () => {
           {/* ── PROVIDERS TAB ── */}
           {activeTab === 'providers' && (
             <Card className="p-5">
-              <SectionTitle title="Providers" count={providers.length} loading={loading} />
+              <SectionTitle title="Providers" count={filteredAndSortedProviders.length} loading={loading} />
+              
+              {/* Search and Sort controls */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Search providers by name, email, category, business or KYC status..."
+                  value={providerSearch}
+                  onChange={(e) => setProviderSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={providerSort}
+                  onChange={(e) => setProviderSort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="ratingHigh">Rating: High to Low</option>
+                  <option value="ratingLow">Rating: Low to High</option>
+                  <option value="experienceHigh">Experience: High to Low</option>
+                  <option value="experienceLow">Experience: Low to High</option>
+                  <option value="nameAsc">Business Name: A to Z</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => providersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${providersView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => providersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${providersView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+
+            {providersView.view === 'table' ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[960px] text-left text-sm">
                   <thead>
@@ -814,14 +955,14 @@ const AdminDashborad = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {providers.length === 0 && (
+                    {filteredAndSortedProviders.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-sm text-zinc-400">
+                        <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
                           No providers found.
                         </td>
                       </tr>
                     )}
-                    {providers.map((item) => (
+                    {filteredAndSortedProviders.map((item) => (
                       <tr
                         key={item._id}
                         className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
@@ -840,9 +981,9 @@ const AdminDashborad = () => {
                           </div>
                         </td>
                         <td className="p-3 text-zinc-600 font-semibold text-purple-600">
-                          {item.category?.name || 'N/A'}
+                          {capitalizeWords(item.category?.name) || 'N/A'}
                         </td>
-                        <td className="p-3 text-zinc-600">{item.businessName || 'N/A'}</td>
+                        <td className="p-3 text-zinc-600">{capitalizeWords(item.businessName) || 'N/A'}</td>
                         <td className="p-3">
                           <KycBadge status={item.kycStatus} />
                         </td>
@@ -860,48 +1001,46 @@ const AdminDashborad = () => {
                           </span>
                         </td>
                         <td className="p-3">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {/* Approve button - only show if not yet approved */}
                             {item.kycStatus !== 'approved' && (
-                              <Button
-                                size="sm"
-                                variant="gradient"
+                              <button
                                 onClick={() => handleApproveProvider(item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                                title="Approve Provider"
                               >
-                                <CheckOutlinedIcon fontSize="inherit" />
-                                Approve
-                              </Button>
+                                <CheckOutlinedIcon fontSize="small" />
+                              </button>
                             )}
 
                             {/* Reject button - only show if not yet rejected */}
                             {item.kycStatus !== 'rejected' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
+                              <button
                                 onClick={() => handleRejectProvider(item._id)}
+                                className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                title="Reject Provider"
                               >
-                                <CloseOutlinedIcon fontSize="inherit" />
-                                Reject
-                              </Button>
+                                <CloseOutlinedIcon fontSize="small" />
+                              </button>
                             )}
 
                             {/* View verification documents */}
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => setSelectedDocs(item)}
+                              className="text-blue-600 hover:bg-blue-50 p-2 rounded-full border border-blue-200 transition-colors"
+                              title="View Documents"
                             >
-                              View Docs
-                            </Button>
+                              <VisibilityOutlinedIcon fontSize="small" />
+                            </button>
 
                             {/* View provider bookings */}
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => handleViewProviderBookings(item)}
+                              className="text-purple-600 hover:bg-purple-50 p-2 rounded-full border border-purple-200 transition-colors"
+                              title="View Bookings"
                             >
-                              Bookings
-                            </Button>
+                              <CalendarMonthOutlinedIcon fontSize="small" />
+                            </button>
 
                             {/* Status toggle */}
                             <select
@@ -910,32 +1049,36 @@ const AdminDashborad = () => {
                               defaultValue=""
                             >
                               <option value="" disabled>Status</option>
-                              <option value="active">active</option>
-                              <option value="inactive">inactive</option>
+                              <option value="active">Active</option>
+                              <option value="inactive">Inactive</option>
                             </select>
 
                             {/* Restore or soft delete */}
                             {item.isDeleted ? (
                               <>
-                                <Button size="sm" onClick={() => handleRestoreProvider(item._id)}>
-                                  Restore
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleHardDeleteProvider(item._id)}
+                                <button
+                                  onClick={() => handleRestoreProvider(item._id)}
+                                  className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                                  title="Restore Provider"
                                 >
-                                  Hard Delete
-                                </Button>
+                                  <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                </button>
+                                <button
+                                  onClick={() => handleHardDeleteProvider(item._id)}
+                                  className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                  title="Permanently Delete Provider"
+                                >
+                                  <DeleteForeverOutlinedIcon fontSize="small" />
+                                </button>
                               </>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
+                              <button
                                 onClick={() => handleSoftDeleteProvider(item._id)}
+                                className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                title="Delete Provider"
                               >
-                                Delete
-                              </Button>
+                                <DeleteOutlineOutlinedIcon fontSize="small" />
+                              </button>
                             )}
                           </div>
                         </td>
@@ -944,94 +1087,321 @@ const AdminDashborad = () => {
                   </tbody>
                 </table>
               </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedProviders.length === 0 && (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No providers found.</p>
+                )}
+                {filteredAndSortedProviders.map((item) => (
+                  <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        {item.user?.profileImage ? (
+                          <img className="h-10 w-10 rounded-2xl object-cover" src={item.user.profileImage} alt="provider" loading="lazy" />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 font-bold text-base">
+                            {(getUserName(item) || 'P')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-bold text-base m-0 text-black dark:text-white">{getUserName(item)}</h4>
+                          <span className="text-xs text-zinc-400 font-mono mt-0.5 block">{item.user?.email || 'N/A'}</span>
+                        </div>
+                      </div>
+                      {item.isDeleted && (
+                        <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                      )}
+                    </div>
+                    <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                      <p><strong>Business:</strong> {capitalizeWords(item.businessName) || 'N/A'}</p>
+                      <p><strong>Category:</strong> <span className="font-semibold text-purple-600">{capitalizeWords(item.category?.name) || 'N/A'}</span></p>
+                      <p><strong>KYC:</strong> <span className="capitalize font-semibold">{item.kycStatus || 'N/A'}</span></p>
+                      <p><strong>Rating:</strong> {item.averageRating || 0} ★</p>
+                      <p><strong>Experience:</strong> {item.experience || 0} Yrs</p>
+                    </div>
+                    <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                      <div className="flex flex-wrap items-center gap-1.5 w-full justify-between">
+                        <div className="flex items-center gap-1">
+                          {item.kycStatus !== 'approved' && (
+                            <button
+                              onClick={() => handleApproveProvider(item._id)}
+                              className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                              title="Approve Provider"
+                            >
+                              <CheckOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                          {item.kycStatus !== 'rejected' && (
+                            <button
+                              onClick={() => handleRejectProvider(item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Reject Provider"
+                            >
+                              <CloseOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setSelectedDocs(item)}
+                            className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-full border border-blue-200 transition-colors"
+                            title="View Documents"
+                          >
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          </button>
+                          <button
+                            onClick={() => handleViewProviderBookings(item)}
+                            className="text-purple-600 hover:bg-purple-50 p-1.5 rounded-full border border-purple-200 transition-colors"
+                            title="View Bookings"
+                          >
+                            <CalendarMonthOutlinedIcon fontSize="small" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <select
+                            className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-zinc-700 outline-none"
+                            onChange={(e) => handleProviderStatus(item._id, e.target.value)}
+                            defaultValue=""
+                          >
+                            <option value="" disabled>Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                          </select>
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestoreProvider(item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Provider"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDeleteProvider(item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Provider"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDeleteProvider(item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Provider"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
             </Card>
           )}
 
           {/* ── BOOKINGS BY CATEGORY TAB ── */}
           {activeTab === 'bookings' && (
             <Card className="p-5">
-              <SectionTitle title="Bookings (My Category)" count={bookings.length} loading={loading} />
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] text-left text-sm">
-                  <thead>
-                    <tr className="bg-[#f8ebe6] text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      <th className="rounded-l-2xl p-3 pl-4">Booking</th>
-                      <th className="p-3">Customer</th>
-                      <th className="p-3">Provider</th>
-                      <th className="p-3">City</th>
-                      <th className="p-3">Amount</th>
-                      <th className="p-3">Status</th>
-                      <th className="rounded-r-2xl p-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
-                          No bookings found in your category.
-                        </td>
-                      </tr>
-                    )}
-                    {bookings.map((item) => (
-                      <tr
-                        key={item._id}
-                        className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
-                      >
-                        <td className="p-3 pl-4 font-semibold text-black">
-                          #{item.bookingNumber || item._id?.slice(-6)}
-                        </td>
-                        <td className="p-3 text-zinc-700">{getUserName(item.customer)}</td>
-                        <td className="p-3 text-zinc-700">{getUserName(item.provider)}</td>
-                        <td className="p-3 text-zinc-600">{item.city || 'N/A'}</td>
-                        <td className="p-3 font-semibold text-black">₹{item.amount || 0}</td>
-                        <td className="p-3">
-                          <StatusBadge status={item.status} />
-                        </td>
-                        <td className="p-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <select
-                              className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 outline-none focus:border-purple-400"
-                              value={item.status}
-                              onChange={(e) => handleBookingStatus(item._id, e.target.value)}
-                            >
-                              <option value="pending">pending</option>
-                              <option value="accepted">accepted</option>
-                              <option value="on_the_way">on the way</option>
-                              <option value="started">started</option>
-                              <option value="completed">completed</option>
-                              <option value="cancelled">cancelled</option>
-                              <option value="rejected">rejected</option>
-                            </select>
+              <SectionTitle title="Bookings (My Category)" count={filteredAndSortedBookings.length} loading={loading} />
 
-                            {item.isDeleted ? (
-                              <>
-                                <Button size="sm" onClick={() => handleRestoreBooking(item._id)}>
-                                  Restore
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleHardDeleteBooking(item._id)}
-                                >
-                                  Hard Delete
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleSoftDeleteBooking(item._id)}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* Search and Sort controls */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                  <input
+                    type="text"
+                    placeholder="Search bookings by number, customer, provider or city..."
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                    className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                  />
+                  <select
+                    value={bookingSort}
+                    onChange={(e) => setBookingSort(e.target.value)}
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                  >
+                    <option value="dateNewest">Date: Newest First</option>
+                    <option value="dateOldest">Date: Oldest First</option>
+                    <option value="amountHigh">Price: High to Low</option>
+                    <option value="amountLow">Price: Low to High</option>
+                  </select>
+                </div>
+                {/* Layout Switcher */}
+                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                  <button
+                    onClick={() => bookingsView.toggleView()}
+                    className={`p-2 rounded-lg transition-colors ${bookingsView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    title="Table View"
+                  >
+                    <TableRowsOutlinedIcon fontSize="small" />
+                  </button>
+                  <button
+                    onClick={() => bookingsView.toggleView()}
+                    className={`p-2 rounded-lg transition-colors ${bookingsView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    title="Card View"
+                  >
+                    <GridViewOutlinedIcon fontSize="small" />
+                  </button>
+                </div>
               </div>
+
+              {bookingsView.view === 'table' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1000px] text-left text-sm">
+                    <thead>
+                      <tr className="bg-[#f8ebe6] text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th className="rounded-l-2xl p-3 pl-4">Booking</th>
+                        <th className="p-3">Customer</th>
+                        <th className="p-3">Provider</th>
+                        <th className="p-3">City</th>
+                        <th className="p-3">Amount</th>
+                        <th className="p-3">Status</th>
+                        <th className="rounded-r-2xl p-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAndSortedBookings.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
+                            No bookings found in your category.
+                          </td>
+                        </tr>
+                      )}
+                      {filteredAndSortedBookings.map((item) => (
+                        <tr
+                          key={item._id}
+                          className="border-b border-zinc-100 transition-colors hover:bg-zinc-50"
+                        >
+                          <td className="p-3 pl-4 font-semibold text-black">
+                            #{item.bookingNumber || item._id?.slice(-6)}
+                          </td>
+                          <td className="p-3 text-zinc-700">{getUserName(item.customer)}</td>
+                          <td className="p-3 text-zinc-700">{getUserName(item.provider)}</td>
+                          <td className="p-3 text-zinc-600">{capitalizeWords(item.city) || 'N/A'}</td>
+                          <td className="p-3 font-semibold text-black">₹{item.amount || 0}</td>
+                          <td className="p-3">
+                            <StatusBadge status={item.status} />
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <select
+                                className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 outline-none focus:border-purple-400"
+                                value={item.status}
+                                onChange={(e) => handleBookingStatus(item._id, e.target.value)}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="on_the_way">On The Way</option>
+                                <option value="started">Started</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="rejected">Rejected</option>
+                              </select>
+
+                              {item.isDeleted ? (
+                                <>
+                                  <button
+                                    onClick={() => handleRestoreBooking(item._id)}
+                                    className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                                    title="Restore Booking"
+                                  >
+                                    <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleHardDeleteBooking(item._id)}
+                                    className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                    title="Permanently Delete Booking"
+                                  >
+                                    <DeleteForeverOutlinedIcon fontSize="small" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => handleSoftDeleteBooking(item._id)}
+                                  className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                  title="Delete Booking"
+                                >
+                                  <DeleteOutlineOutlinedIcon fontSize="small" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredAndSortedBookings.length === 0 && (
+                    <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No bookings found in your category.</p>
+                  )}
+                  {filteredAndSortedBookings.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <span className="text-xs font-mono font-bold text-amber-500">#{item.bookingNumber || item._id?.slice(-6)}</span>
+                          <h4 className="font-bold text-base m-0 mt-0.5 text-black dark:text-white">{capitalizeWords(item.service?.title) || 'Service'}</h4>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                        <p><strong>Customer:</strong> {getUserName(item.customer)}</p>
+                        <p><strong>Provider:</strong> {getUserName(item.provider)}</p>
+                        <p><strong>City:</strong> {capitalizeWords(item.city) || 'N/A'}</p>
+                        <p><strong>Amount:</strong> ₹{item.amount || 0}</p>
+                        <p><strong>Status:</strong> <span className="capitalize font-semibold">{capitalizeWords(item.status.replace(/_/g, ' '))}</span></p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <select
+                          className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 outline-none"
+                          value={item.status}
+                          onChange={(e) => handleBookingStatus(item._id, e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="on_the_way">On The Way</option>
+                          <option value="started">Started</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestoreBooking(item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Booking"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDeleteBooking(item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Booking"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDeleteBooking(item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Booking"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </Card>
           )}
 
@@ -1103,25 +1473,29 @@ const AdminDashborad = () => {
 
                             {item.isDeleted ? (
                               <>
-                                <Button size="sm" onClick={() => handleRestoreBooking(item._id)}>
-                                  Restore
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleHardDeleteBooking(item._id)}
+                                <button
+                                  onClick={() => handleRestoreBooking(item._id)}
+                                  className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                                  title="Restore Booking"
                                 >
-                                  Hard Delete
-                                </Button>
+                                  <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                </button>
+                                <button
+                                  onClick={() => handleHardDeleteBooking(item._id)}
+                                  className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                  title="Permanently Delete Booking"
+                                >
+                                  <DeleteForeverOutlinedIcon fontSize="small" />
+                                </button>
                               </>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
+                              <button
                                 onClick={() => handleSoftDeleteBooking(item._id)}
+                                className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                title="Delete Booking"
                               >
-                                Delete
-                              </Button>
+                                <DeleteOutlineOutlinedIcon fontSize="small" />
+                              </button>
                             )}
                           </div>
                         </td>
@@ -1136,93 +1510,225 @@ const AdminDashborad = () => {
           {/* ── REVIEWS TAB ── */}
           {activeTab === 'reviews' && (
             <Card className="p-5">
-              <SectionTitle title="Reviews & Ratings" count={reviews.length} loading={loading} />
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {reviews.length === 0 && (
-                  <p className="col-span-3 text-center text-sm text-zinc-400">No reviews yet.</p>
-                )}
-                {reviews.map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex flex-col gap-3 rounded-[24px] bg-[#f8ebe6] p-4"
+              <SectionTitle title="Reviews & Ratings" count={filteredAndSortedReviews.length} loading={loading} />
+
+               {/* Search and Sort controls */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                  <input
+                    type="text"
+                    placeholder="Search reviews by customer, provider, comment text or rating..."
+                    value={reviewSearch}
+                    onChange={(e) => setReviewSearch(e.target.value)}
+                    className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                  />
+                  <select
+                    value={reviewSort}
+                    onChange={(e) => setReviewSort(e.target.value)}
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
                   >
-                    {/* Stars */}
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <StarOutlineOutlinedIcon
-                          key={i}
-                          style={{ fontSize: 16 }}
-                          className={i < (item.rating || 0) ? 'text-yellow-400' : 'text-zinc-300'}
-                        />
-                      ))}
-                      <span className="ml-1 text-xs font-semibold text-zinc-500">
-                        {item.rating}/5
-                      </span>
-                    </div>
-
-                    {/* Review text */}
-                    <p className="m-0 line-clamp-3 text-sm text-zinc-700">
-                      {item.review || 'No review text.'}
-                    </p>
-
-                    {/* Customer and provider */}
-                    <div className="flex flex-col gap-1 text-xs text-zinc-500">
-                      <span>
-                        By <span className="font-semibold text-black">{getUserName(item.customer)}</span>
-                      </span>
-                      <span>
-                        For <span className="font-semibold text-black">{getUserName(item.provider)}</span>
-                      </span>
-                    </div>
-
-                    {/* Status and actions */}
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-semibold ${item.isDeleted ? 'text-red-500' : 'text-emerald-600'}`}>
-                        {item.isDeleted ? 'Deleted' : 'Active'}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {item.isDeleted ? (
-                        <>
-                          <Button size="sm" onClick={() => handleRestoreReview(item._id)}>
-                            Restore
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleHardDeleteReview(item._id)}
-                          >
-                            Hard Delete
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSoftDeleteReview(item._id)}
-                        >
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    <option value="ratingHigh">Rating: High to Low</option>
+                    <option value="ratingLow">Rating: Low to High</option>
+                  </select>
+                </div>
+                {/* Layout Switcher */}
+                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                  <button
+                    onClick={() => reviewsView.toggleView()}
+                    className={`p-2 rounded-lg transition-colors ${reviewsView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    title="Table View"
+                  >
+                    <TableRowsOutlinedIcon fontSize="small" />
+                  </button>
+                  <button
+                    onClick={() => reviewsView.toggleView()}
+                    className={`p-2 rounded-lg transition-colors ${reviewsView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    title="Card View"
+                  >
+                    <GridViewOutlinedIcon fontSize="small" />
+                  </button>
+                </div>
               </div>
+
+              {reviewsView.view === 'table' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[800px] text-left text-sm">
+                    <thead>
+                      <tr className="bg-[#f8ebe6] text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th className="rounded-l-2xl p-3 pl-4">Customer</th>
+                        <th className="p-3">Provider</th>
+                        <th className="p-3">Rating</th>
+                        <th className="p-3">Review</th>
+                        <th className="p-3">Status</th>
+                        <th className="rounded-r-2xl p-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAndSortedReviews.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-sm text-zinc-400">No reviews found.</td>
+                        </tr>
+                      ) : (
+                        filteredAndSortedReviews.map((item) => (
+                          <tr key={item._id} className="border-b border-zinc-100 transition-colors hover:bg-zinc-50">
+                            <td className="p-3 pl-4 font-semibold text-black">{getUserName(item.customer)}</td>
+                            <td className="p-3 text-zinc-700">{getUserName(item.provider)}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-0.5">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <StarOutlineOutlinedIcon
+                                    key={i}
+                                    style={{ fontSize: 16 }}
+                                    className={i < (item.rating || 0) ? 'text-yellow-400' : 'text-zinc-300'}
+                                  />
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-3 text-zinc-600 max-w-xs truncate" title={item.review}>{item.review || 'No review text.'}</td>
+                            <td className="p-3">
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.isDeleted ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                {item.isDeleted ? 'Deleted' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1">
+                                {item.isDeleted ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleRestoreReview(item._id)}
+                                      className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                      title="Restore Review"
+                                    >
+                                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleHardDeleteReview(item._id)}
+                                      className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                      title="Permanently Delete Review"
+                                    >
+                                      <DeleteForeverOutlinedIcon fontSize="small" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => handleSoftDeleteReview(item._id)}
+                                    className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                    title="Delete Review"
+                                  >
+                                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {filteredAndSortedReviews.length === 0 ? (
+                    <p className="col-span-3 text-center text-sm text-zinc-400">No reviews yet.</p>
+                  ) : (
+                    filteredAndSortedReviews.map((item) => (
+                      <div
+                        key={item._id}
+                        className="flex flex-col gap-3 rounded-[24px] bg-[#f8ebe6] p-4 text-black"
+                      >
+                        {/* Stars */}
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <StarOutlineOutlinedIcon
+                              key={i}
+                              style={{ fontSize: 16 }}
+                              className={i < (item.rating || 0) ? 'text-yellow-400' : 'text-zinc-300'}
+                            />
+                          ))}
+                          <span className="ml-1 text-xs font-semibold text-zinc-500">
+                            {item.rating}/5
+                          </span>
+                        </div>
+
+                        {/* Review text */}
+                        <p className="m-0 line-clamp-3 text-sm text-zinc-700">
+                          {item.review || 'No review text.'}
+                        </p>
+
+                        {/* Customer and provider */}
+                        <div className="flex flex-col gap-1 text-xs text-zinc-500">
+                          <span>
+                            By <span className="font-semibold text-black">{getUserName(item.customer)}</span>
+                          </span>
+                          <span>
+                            For <span className="font-semibold text-black">{getUserName(item.provider)}</span>
+                          </span>
+                        </div>
+
+                        {/* Status and actions */}
+                        <div className="flex items-center justify-between border-t pt-2 mt-2 border-zinc-200/40">
+                          <span className={`text-xs font-semibold ${item.isDeleted ? 'text-red-500' : 'text-emerald-600'}`}>
+                            {item.isDeleted ? 'Deleted' : 'Active'}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {item.isDeleted ? (
+                              <>
+                                <button
+                                  onClick={() => handleRestoreReview(item._id)}
+                                  className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                  title="Restore Review"
+                                >
+                                  <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                </button>
+                                <button
+                                  onClick={() => handleHardDeleteReview(item._id)}
+                                  className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                  title="Permanently Delete Review"
+                                >
+                                  <DeleteForeverOutlinedIcon fontSize="small" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleSoftDeleteReview(item._id)}
+                                className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Delete Review"
+                              >
+                                <DeleteOutlineOutlinedIcon fontSize="small" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </Card>
           )}
 
           {/* ── LOCATIONS TAB ── */}
           {activeTab === 'locations' && (
             <Card className="p-5">
-              <SectionTitle title="Manage Locations" count={locations.length} loading={loading} />
+              <SectionTitle title="Manage Locations" count={filteredLocations.length} loading={loading} />
+
+              {/* Search and Sort controls */}
+              <div className="mb-6 flex gap-3">
+                <input
+                  type="text"
+                  placeholder="Search locations by city, district, state or pincode..."
+                  value={locationSearch}
+                  onChange={(e) => setLocationSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+              </div>
 
               {/* Locations Grid */}
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {locations.length === 0 && (
-                  <p className="col-span-3 text-center text-sm text-[var(--text-muted)]">No locations added yet.</p>
+                {filteredLocations.length === 0 && (
+                  <p className="col-span-3 text-center text-sm text-[var(--text-muted)]">No locations found.</p>
                 )}
-                {locations.map((item) => (
+                {filteredLocations.map((item) => (
                   <div
                     key={item._id}
                     className="flex flex-col justify-between gap-4 rounded-[24px] border border-[var(--border-color)] bg-[var(--bg-shell)] p-5 transition-all"
@@ -1310,7 +1816,7 @@ const AdminDashborad = () => {
               <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
                 <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Self Photo</span>
                 {selectedDocs.selfPhoto ? (
-                  <img src={selectedDocs.selfPhoto} alt="Self Photo" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                  <img src={selectedDocs.selfPhoto} alt="Self Photo" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" loading="lazy" />
                 ) : (
                   <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
                 )}
@@ -1319,7 +1825,7 @@ const AdminDashborad = () => {
               <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
                 <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">PAN Card</span>
                 {selectedDocs.panCard ? (
-                  <img src={selectedDocs.panCard} alt="PAN Card" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                  <img src={selectedDocs.panCard} alt="PAN Card" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" loading="lazy" />
                 ) : (
                   <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
                 )}
@@ -1328,7 +1834,7 @@ const AdminDashborad = () => {
               <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
                 <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Aadhar Card Front</span>
                 {selectedDocs.aadharFront ? (
-                  <img src={selectedDocs.aadharFront} alt="Aadhar Front" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                  <img src={selectedDocs.aadharFront} alt="Aadhar Front" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" loading="lazy" />
                 ) : (
                   <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
                 )}
@@ -1337,7 +1843,7 @@ const AdminDashborad = () => {
               <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
                 <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Aadhar Card Back</span>
                 {selectedDocs.aadharBack ? (
-                  <img src={selectedDocs.aadharBack} alt="Aadhar Back" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                  <img src={selectedDocs.aadharBack} alt="Aadhar Back" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" loading="lazy" />
                 ) : (
                   <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
                 )}

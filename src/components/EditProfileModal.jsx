@@ -140,6 +140,7 @@ const EditProfileModal = ({ onClose, onSuccess, uploadEndpoint, profileEndpoint 
                       className="h-full w-full object-cover"
                       src={formData.profileImage}
                       alt="profile"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-black text-white">

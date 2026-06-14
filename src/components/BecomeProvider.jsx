@@ -459,6 +459,7 @@ const BecomeProvider = () => {
                           <img
                             src={formData[key]}
                             alt={label}
+                            loading="lazy"
                             style={{
                               width: isCircle ? 90 : '100%',
                               height: 90,

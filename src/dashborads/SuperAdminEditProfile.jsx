@@ -110,7 +110,7 @@ const SuperAdminEditProfile = () => {
               <label className="mb-2 block text-sm font-semibold text-[var(--text-muted)]">Profile Image</label>
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 {formData.profileImage && (
-                  <img className="h-20 w-20 rounded-2xl object-cover" src={formData.profileImage} alt="profile" />
+                  <img className="h-20 w-20 rounded-2xl object-cover" src={formData.profileImage} alt="profile" loading="lazy" />
                 )}
                 <Input type="file" accept="image/*" onChange={handleImageUpload} />
               </div>

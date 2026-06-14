@@ -11,18 +11,33 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined'
+import RestoreFromTrashOutlinedIcon from '@mui/icons-material/RestoreFromTrashOutlined'
+import ToggleOnOutlinedIcon from '@mui/icons-material/ToggleOnOutlined'
+import ToggleOffOutlinedIcon from '@mui/icons-material/ToggleOffOutlined'
 import API_URL from '../api'
 import SuperAdminSidebar from '../components/SuperAdminSidebar'
 import EditProfileModal from '../components/EditProfileModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
+import { capitalize, capitalizeWords } from '../lib/utils'
+import UseView from '../custom_hook/UseView'
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined'
+import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
 
 const SuperAdminDashborad = () => {
   const navigate = useNavigate()
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}')
   const [activeTab, setActiveTab] = useState('dashboard')
   const [profile, setProfile] = useState(savedUser)
+
+  const categoriesView = UseView('superadmin_categories', 'table')
+  const usersView = UseView('superadmin_users', 'table')
+  const adminsView = UseView('superadmin_admins', 'table')
+  const providersView = UseView('superadmin_providers', 'table')
+  const bookingsView = UseView('superadmin_bookings', 'table')
   const [users, setUsers] = useState([])
   const [admins, setAdmins] = useState([])
   const [providers, setProviders] = useState([])
@@ -55,6 +70,27 @@ const SuperAdminDashborad = () => {
   const [lookupPincode, setLookupPincode] = useState('')
   const [lookupLoading, setLookupLoading] = useState(false)
 
+  // Search & Sort states
+  const [categorySearch, setCategorySearch] = useState('')
+  const [categorySort, setCategorySort] = useState('nameAsc')
+
+  const [userSearch, setUserSearch] = useState('')
+  const [userSort, setUserSort] = useState('nameAsc')
+
+  const [adminSearch, setAdminSearch] = useState('')
+  const [adminSort, setAdminSort] = useState('nameAsc')
+
+  const [providerSearch, setProviderSearch] = useState('')
+  const [providerSort, setProviderSort] = useState('ratingHigh')
+
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [bookingSort, setBookingSort] = useState('dateNewest')
+
+  const [reviewSearch, setReviewSearch] = useState('')
+  const [reviewSort, setReviewSort] = useState('ratingHigh')
+
+  const [locationSearch, setLocationSearch] = useState('')
+
   const token = localStorage.getItem('token')
 
   const getHeaders = () => {
@@ -67,7 +103,8 @@ const SuperAdminDashborad = () => {
 
   const getUserName = (item) => {
     const user = item?.user || item
-    return `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || 'N/A'
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+    return fullName ? capitalizeWords(fullName) : (user?.email || 'N/A')
   }
 
   const getUserEmail = (item) => {
@@ -77,8 +114,131 @@ const SuperAdminDashborad = () => {
 
   const showStatus = (status) => {
     if (!status) return 'N/A'
-    return status.replaceAll('_', ' ')
+    return capitalizeWords(status.replaceAll('_', ' '))
   }
+
+  // Categories filter & sort
+  const filteredAndSortedCategories = categories
+    .filter((cat) => {
+      const q = categorySearch.toLowerCase().trim()
+      if (!q) return true
+      const cName = cat.name?.toLowerCase() || ''
+      const cDesc = cat.description?.toLowerCase() || ''
+      return cName.includes(q) || cDesc.includes(q)
+    })
+    .sort((a, b) => {
+      if (categorySort === 'nameAsc') return (a.name || '').localeCompare(b.name || '')
+      if (categorySort === 'nameDesc') return (b.name || '').localeCompare(b.name || '')
+      return 0
+    })
+
+  // Users filter & sort
+  const filteredAndSortedUsers = users
+    .filter((u) => {
+      const q = userSearch.toLowerCase().trim()
+      if (!q) return true
+      const uName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase()
+      const uEmail = u.email?.toLowerCase() || ''
+      const uPhone = u.phone?.toLowerCase() || ''
+      const uStatus = u.status?.toLowerCase() || ''
+      return uName.includes(q) || uEmail.includes(q) || uPhone.includes(q) || uStatus.includes(q)
+    })
+    .sort((a, b) => {
+      const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim()
+      const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim()
+      if (userSort === 'nameAsc') return nameA.localeCompare(nameB)
+      if (userSort === 'nameDesc') return nameB.localeCompare(nameA)
+      return 0
+    })
+
+  // Admins filter & sort
+  const filteredAndSortedAdmins = admins
+    .filter((adm) => {
+      const q = adminSearch.toLowerCase().trim()
+      if (!q) return true
+      const aName = getUserName(adm).toLowerCase()
+      const aEmail = getUserEmail(adm).toLowerCase()
+      const aEmpId = adm.employeeId?.toLowerCase() || ''
+      const aCat = adm.category?.name?.toLowerCase() || ''
+      const aCity = adm.city?.toLowerCase() || ''
+      const aStatus = adm.status?.toLowerCase() || ''
+      return aName.includes(q) || aEmail.includes(q) || aEmpId.includes(q) || aCat.includes(q) || aCity.includes(q) || aStatus.includes(q)
+    })
+    .sort((a, b) => {
+      const nameA = getUserName(a)
+      const nameB = getUserName(b)
+      if (adminSort === 'nameAsc') return nameA.localeCompare(nameB)
+      if (adminSort === 'nameDesc') return nameB.localeCompare(nameA)
+      return 0
+    })
+
+  // Providers filter & sort
+  const filteredAndSortedProviders = providers
+    .filter((p) => {
+      const q = providerSearch.toLowerCase().trim()
+      if (!q) return true
+      const pName = getUserName(p).toLowerCase()
+      const pEmail = getUserEmail(p).toLowerCase()
+      const pBusiness = p.businessName?.toLowerCase() || ''
+      const pKyc = p.kycStatus?.toLowerCase() || ''
+      return pName.includes(q) || pEmail.includes(q) || pBusiness.includes(q) || pKyc.includes(q)
+    })
+    .sort((a, b) => {
+      if (providerSort === 'ratingHigh') return (b.averageRating || 0) - (a.averageRating || 0)
+      if (providerSort === 'ratingLow') return (a.averageRating || 0) - (b.averageRating || 0)
+      if (providerSort === 'experienceHigh') return (b.experience || 0) - (a.experience || 0)
+      if (providerSort === 'experienceLow') return (a.experience || 0) - (b.experience || 0)
+      return 0
+    })
+
+  // Bookings filter & sort
+  const filteredAndSortedBookings = bookings
+    .filter((b) => {
+      const q = bookingSearch.toLowerCase().trim()
+      if (!q) return true
+      const bNo = b.bookingNumber?.toString() || ''
+      const cName = getUserName(b.customer).toLowerCase()
+      const pName = getUserName(b.provider).toLowerCase()
+      const bCity = b.city?.toLowerCase() || ''
+      const bStatus = b.status?.toLowerCase() || ''
+      return bNo.includes(q) || cName.includes(q) || pName.includes(q) || bCity.includes(q) || bStatus.includes(q)
+    })
+    .sort((a, b) => {
+      if (bookingSort === 'dateNewest') return new Date(b.bookingDate) - new Date(a.bookingDate)
+      if (bookingSort === 'dateOldest') return new Date(a.bookingDate) - new Date(b.bookingDate)
+      if (bookingSort === 'amountHigh') return b.amount - a.amount
+      if (bookingSort === 'amountLow') return a.amount - b.amount
+      return 0
+    })
+
+  // Reviews filter & sort
+  const filteredAndSortedReviews = reviews
+    .filter((r) => {
+      const q = reviewSearch.toLowerCase().trim()
+      if (!q) return true
+      const cName = getUserName(r.customer).toLowerCase()
+      const pName = getUserName(r.provider).toLowerCase()
+      const rText = r.review?.toLowerCase() || ''
+      const rRating = r.rating?.toString() || ''
+      return cName.includes(q) || pName.includes(q) || rText.includes(q) || rRating === q
+    })
+    .sort((a, b) => {
+      if (reviewSort === 'ratingHigh') return b.rating - a.rating
+      if (reviewSort === 'ratingLow') return a.rating - b.rating
+      return 0
+    })
+
+  // Locations filter
+  const filteredLocations = locations
+    .filter((loc) => {
+      const q = locationSearch.toLowerCase().trim()
+      if (!q) return true
+      const lCity = loc.city?.toLowerCase() || ''
+      const lState = loc.state?.toLowerCase() || ''
+      const lDistrict = loc.district?.toLowerCase() || ''
+      const lPins = loc.pincodes ? loc.pincodes.map(p => (p.pincode || p).toString()).join(' ') : ''
+      return lCity.includes(q) || lState.includes(q) || lDistrict.includes(q) || lPins.includes(q)
+    })
 
   const fetchData = async () => {
     setLoading(true)
@@ -177,6 +337,11 @@ const SuperAdminDashborad = () => {
     e.preventDefault()
     setMessage('')
 
+    if (!categoryForm.image) {
+      setMessage('Category image is required. Please upload an image first.')
+      return
+    }
+
     try {
       const res = await axios.post(`${API_URL}/superadmin/category/create`, categoryForm, getHeaders())
       setMessage(res.data.message || 'Category created')
@@ -241,6 +406,17 @@ const SuperAdminDashborad = () => {
     try {
       const res = await axios.put(`${API_URL}/superadmin/${type}/restore/${id}`, {}, getHeaders())
       setMessage(res.data.message || 'Restored successfully')
+      fetchData()
+    } catch (error) {
+      setMessage(error.response?.data?.message || error.message)
+    }
+  }
+
+  const handleHardDelete = async (type, id) => {
+    if (!window.confirm(`Are you absolutely sure you want to PERMANENTLY delete this ${type}? This action cannot be undone.`)) return
+    try {
+      const res = await axios.delete(`${API_URL}/superadmin/${type}/hard-delete/${id}`, getHeaders())
+      setMessage(res.data.message || 'Permanently deleted successfully')
       fetchData()
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
@@ -376,7 +552,7 @@ const SuperAdminDashborad = () => {
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-white">
               {profile?.profileImage ? (
-                <img className="h-full w-full rounded-2xl object-cover" src={profile.profileImage} alt="profile" />
+                <img className="h-full w-full rounded-2xl object-cover" src={profile.profileImage} alt="profile" loading="lazy" />
               ) : (
                 <PersonOutlineOutlinedIcon />
               )}
@@ -440,64 +616,325 @@ const SuperAdminDashborad = () => {
             <form className="mb-6 grid gap-3 md:grid-cols-3" onSubmit={handleCreateCategory}>
               <Input name="name" value={categoryForm.name} onChange={handleCategoryChange} placeholder="Category name" required />
               <Input name="description" value={categoryForm.description} onChange={handleCategoryChange} placeholder="Description" />
-              <Input type="file" accept="image/*" onChange={handleCategoryImageUpload} />
+              <Input type="file" accept="image/*" onChange={handleCategoryImageUpload} required={!categoryForm.image} />
               {categoryForm.image && (
                 <div className="flex items-center gap-3 rounded-2xl bg-[#f8ebe6] p-3 md:col-span-3">
-                  <img className="h-16 w-16 rounded-2xl object-cover" src={categoryForm.image} alt="category" />
+                  <img className="h-16 w-16 rounded-2xl object-cover" src={categoryForm.image} alt="category" loading="lazy" />
                   <p className="m-0 text-sm font-semibold text-zinc-700">Category image uploaded</p>
                 </div>
               )}
               {uploading && <p className="m-0 text-sm font-semibold text-zinc-600 md:col-span-3">Uploading image...</p>}
               <Button className="md:col-span-3" variant="gradient">Create Category</Button>
             </form>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] text-left text-sm">
-                <thead className="bg-[#f8ebe6] text-zinc-700">
-                  <tr>
-                    <th className="p-3">Image</th>
-                    <th className="p-3">Name</th>
-                    <th className="p-3">Description</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Deleted</th>
-                    <th className="p-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.map((item) => (
-                    <tr key={item._id} className="border-b border-zinc-100">
-                      <td className="p-3">
-                        {item.image ? (
-                          <img className="h-12 w-12 rounded-2xl object-cover" src={item.image} alt={item.name} />
-                        ) : (
-                          <span>N/A</span>
-                        )}
-                      </td>
-                      <td className="p-3 font-semibold">{item.name}</td>
-                      <td className="p-3">{item.description || 'N/A'}</td>
-                      <td className="p-3">{item.isActive ? 'Active' : 'Inactive'}</td>
-                      <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-                      <td className="flex gap-2 p-3">
-                        <Button size="sm" variant="outline" onClick={() => handleCategoryStatus(item._id, !item.isActive)}>
-                          {item.isActive ? 'Inactive' : 'Active'}
-                        </Button>
-                        {item.isDeleted ? (
-                          <Button size="sm" onClick={() => handleRestore('category', item._id)}>Restore</Button>
-                        ) : (
-                          <Button size="sm" onClick={() => handleSoftDelete('category', item._id)}>Delete</Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={categorySort}
+                  onChange={(e) => setCategorySort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="nameAsc">Name: A to Z</option>
+                  <option value="nameDesc">Name: Z to A</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => categoriesView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${categoriesView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => categoriesView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${categoriesView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
             </div>
+
+            {categoriesView.view === 'table' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left text-sm">
+                  <thead className="bg-[#f8ebe6] text-zinc-700">
+                    <tr>
+                      <th className="p-3">Image</th>
+                      <th className="p-3">Name</th>
+                      <th className="p-3">Description</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Deleted</th>
+                      <th className="p-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedCategories.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-3 text-center text-zinc-400">No categories found.</td>
+                      </tr>
+                    ) : (
+                      filteredAndSortedCategories.map((item) => (
+                        <tr key={item._id} className="border-b border-zinc-100">
+                          <td className="p-3">
+                            {item.image ? (
+                              <img className="h-12 w-12 rounded-2xl object-cover" src={item.image} alt={item.name} loading="lazy" />
+                            ) : (
+                              <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">
+                                {(item.name || 'C')[0].toUpperCase()}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 font-semibold">{capitalizeWords(item.name)}</td>
+                          <td className="p-3">{capitalize(item.description) || 'N/A'}</td>
+                          <td className="p-3">{item.isActive ? 'Active' : 'Inactive'}</td>
+                          <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
+                          <td className="flex items-center gap-2 p-3">
+                            <button
+                              onClick={() => handleCategoryStatus(item._id, !item.isActive)}
+                              className="p-2 rounded-full border border-zinc-200 hover:bg-zinc-50 transition-colors"
+                              title={item.isActive ? 'Deactivate Category' : 'Activate Category'}
+                            >
+                              {item.isActive ? (
+                                <ToggleOnOutlinedIcon className="text-emerald-500" fontSize="medium" />
+                              ) : (
+                                <ToggleOffOutlinedIcon className="text-zinc-400" fontSize="medium" />
+                              )}
+                            </button>
+                            {item.isDeleted ? (
+                              <>
+                                <button
+                                  onClick={() => handleRestore('category', item._id)}
+                                  className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                                  title="Restore Category"
+                                >
+                                  <RestoreFromTrashOutlinedIcon fontSize="small" />
+                                </button>
+                                <button
+                                  onClick={() => handleHardDelete('category', item._id)}
+                                  className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                  title="Permanently Delete Category"
+                                >
+                                  <DeleteForeverOutlinedIcon fontSize="small" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleSoftDelete('category', item._id)}
+                                className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                                title="Delete Category"
+                              >
+                                <DeleteOutlineOutlinedIcon fontSize="small" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedCategories.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No categories found.</p>
+                ) : (
+                  filteredAndSortedCategories.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          {item.image ? (
+                            <img className="h-12 w-12 rounded-2xl object-cover" src={item.image} alt={item.name} loading="lazy" />
+                          ) : (
+                            <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">
+                              {(item.name || 'C')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-bold text-base m-0 text-black dark:text-white">{capitalizeWords(item.name)}</h4>
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold mt-1.5 ${item.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                              {item.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-500 line-clamp-2 mt-1 mb-4">{capitalize(item.description) || 'No description provided.'}</p>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <span className="text-[10px] text-zinc-400">Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleCategoryStatus(item._id, !item.isActive)}
+                            className="p-1.5 rounded-full border border-zinc-200 hover:bg-zinc-50 transition-colors"
+                            title={item.isActive ? 'Deactivate Category' : 'Activate Category'}
+                          >
+                            {item.isActive ? (
+                              <ToggleOnOutlinedIcon className="text-emerald-500" fontSize="small" />
+                            ) : (
+                              <ToggleOffOutlinedIcon className="text-zinc-400" fontSize="small" />
+                            )}
+                          </button>
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore('category', item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Category"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete('category', item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Category"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDelete('category', item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Category"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         )}
 
         {activeTab === 'users' && (
           <Card className="p-5">
             <SectionTitle title="Users" loading={loading} />
-            <UserTable data={users} onStatus={handleUserStatus} onDelete={(id) => handleSoftDelete('user', id)} onRestore={(id) => handleRestore('user', id)} />
+
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                <input
+                  type="text"
+                  placeholder="Search users by name, email, phone or status..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={userSort}
+                  onChange={(e) => setUserSort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="nameAsc">Name: A to Z</option>
+                  <option value="nameDesc">Name: Z to A</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => usersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${usersView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => usersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${usersView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+            </div>
+
+            {usersView.view === 'table' ? (
+              <UserTable data={filteredAndSortedUsers} onStatus={handleUserStatus} onDelete={(id) => handleSoftDelete('user', id)} onRestore={(id) => handleRestore('user', id)} onHardDelete={(id) => handleHardDelete('user', id)} />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedUsers.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No users found.</p>
+                ) : (
+                  filteredAndSortedUsers.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 font-bold text-base">
+                            {(item.firstName || 'U')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-base m-0 text-black dark:text-white">{capitalizeWords(`${item.firstName || ''} ${item.lastName || ''}`.trim()) || 'N/A'}</h4>
+                            <span className="text-xs text-zinc-400 font-mono mt-0.5 block">{item.email}</span>
+                          </div>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                        <p><strong>Phone:</strong> {item.phone || 'N/A'}</p>
+                        <p><strong>Status:</strong> <span className="capitalize font-semibold">{item.status}</span></p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <select
+                          className="rounded-full border border-zinc-200 px-3 py-1.5 bg-white text-zinc-700 text-xs"
+                          value={item.status}
+                          onChange={(e) => handleUserStatus(item._id, e.target.value)}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="blocked">Blocked</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore('user', item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore User"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete('user', item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete User"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDelete('user', item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete User"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         )}
 
@@ -585,28 +1022,384 @@ const SuperAdminDashborad = () => {
               </form>
             </div>
 
-            <AdminTable data={admins} onStatus={handleAdminStatus} onDelete={(id) => handleSoftDelete('admin', id)} onRestore={(id) => handleRestore('admin', id)} getUserName={getUserName} getUserEmail={getUserEmail} />
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                <input
+                  type="text"
+                  placeholder="Search admins by name, email, employee ID, city or category..."
+                  value={adminSearch}
+                  onChange={(e) => setAdminSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={adminSort}
+                  onChange={(e) => setAdminSort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="nameAsc">Name: A to Z</option>
+                  <option value="nameDesc">Name: Z to A</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => adminsView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${adminsView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => adminsView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${adminsView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+            </div>
+
+            {adminsView.view === 'table' ? (
+              <AdminTable data={filteredAndSortedAdmins} onStatus={handleAdminStatus} onDelete={(id) => handleSoftDelete('admin', id)} onRestore={(id) => handleRestore('admin', id)} onHardDelete={(id) => handleHardDelete('admin', id)} getUserName={getUserName} getUserEmail={getUserEmail} />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedAdmins.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No admins found.</p>
+                ) : (
+                  filteredAndSortedAdmins.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 font-bold text-base">
+                            {(getUserName(item) || 'A')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-base m-0 text-black dark:text-white">{getUserName(item)}</h4>
+                            <span className="text-xs text-zinc-400 font-mono mt-0.5 block">{getUserEmail(item)}</span>
+                          </div>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                        <p><strong>Employee ID:</strong> {item.employeeId || 'N/A'}</p>
+                        <p><strong>City:</strong> {capitalizeWords(item.city) || 'N/A'}</p>
+                        <p>
+                          <strong>Category: </strong>
+                          <span className="rounded-full bg-[#f8ebe6] px-2 py-0.5 text-[10px] font-semibold capitalize text-zinc-700">
+                            {capitalizeWords(item.category?.name) || 'N/A'}
+                          </span>
+                        </p>
+                        <p><strong>Status:</strong> <span className="capitalize font-semibold">{item.status}</span></p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <select
+                          className="rounded-full border border-zinc-200 px-3 py-1.5 bg-white text-zinc-700 text-xs"
+                          value={item.status}
+                          onChange={(e) => handleAdminStatus(item._id, e.target.value)}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore('admin', item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Admin"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete('admin', item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Admin"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDelete('admin', item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Admin"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         )}
 
         {activeTab === 'providers' && (
           <Card className="p-5">
             <SectionTitle title="Providers" loading={loading} />
-            <ProviderTable data={providers} onDelete={(id) => handleSoftDelete('provider', id)} onRestore={(id) => handleRestore('provider', id)} getUserName={getUserName} getUserEmail={getUserEmail} />
+            
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                <input
+                  type="text"
+                  placeholder="Search providers by name, email, business name or KYC status..."
+                  value={providerSearch}
+                  onChange={(e) => setProviderSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={providerSort}
+                  onChange={(e) => setProviderSort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="ratingHigh">Rating: High to Low</option>
+                  <option value="ratingLow">Rating: Low to High</option>
+                  <option value="experienceHigh">Experience: High to Low</option>
+                  <option value="experienceLow">Experience: Low to High</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => providersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${providersView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => providersView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${providersView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+            </div>
+
+            {providersView.view === 'table' ? (
+              <ProviderTable data={filteredAndSortedProviders} onDelete={(id) => handleSoftDelete('provider', id)} onRestore={(id) => handleRestore('provider', id)} onHardDelete={(id) => handleHardDelete('provider', id)} getUserName={getUserName} getUserEmail={getUserEmail} />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedProviders.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No providers found.</p>
+                ) : (
+                  filteredAndSortedProviders.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          {item.user?.profileImage ? (
+                            <img className="h-10 w-10 rounded-2xl object-cover" src={item.user.profileImage} alt="provider" loading="lazy" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 font-bold text-base">
+                              {(getUserName(item) || 'P')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-bold text-base m-0 text-black dark:text-white">{getUserName(item)}</h4>
+                            <span className="text-xs text-zinc-400 font-mono mt-0.5 block">{getUserEmail(item)}</span>
+                          </div>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                        <p><strong>Business:</strong> {capitalizeWords(item.businessName) || 'N/A'}</p>
+                        <p><strong>KYC:</strong> <span className="capitalize font-semibold">{item.kycStatus || 'N/A'}</span></p>
+                        <p><strong>Rating:</strong> {item.averageRating || 0} ★</p>
+                        <p><strong>Experience:</strong> {item.experience || 0} Yrs</p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <span className="text-[10px] text-zinc-400">Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-1">
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore('provider', item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Provider"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete('provider', item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Provider"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDelete('provider', item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Provider"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         )}
 
         {activeTab === 'bookings' && (
           <Card className="p-5">
             <SectionTitle title="Bookings" loading={loading} />
-            <BookingTable data={bookings} onStatus={handleBookingStatus} onDelete={(id) => handleSoftDelete('booking', id)} onRestore={(id) => handleRestore('booking', id)} getUserName={getUserName} showStatus={showStatus} />
+
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full">
+                <input
+                  type="text"
+                  placeholder="Search bookings by number, customer, provider or city..."
+                  value={bookingSearch}
+                  onChange={(e) => setBookingSearch(e.target.value)}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                />
+                <select
+                  value={bookingSort}
+                  onChange={(e) => setBookingSort(e.target.value)}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+                >
+                  <option value="dateNewest">Date: Newest First</option>
+                  <option value="dateOldest">Date: Oldest First</option>
+                  <option value="amountHigh">Price: High to Low</option>
+                  <option value="amountLow">Price: Low to High</option>
+                </select>
+              </div>
+              {/* Layout Switcher */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0 self-end sm:self-center">
+                <button
+                  onClick={() => bookingsView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${bookingsView.view === 'table' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Table View"
+                >
+                  <TableRowsOutlinedIcon fontSize="small" />
+                </button>
+                <button
+                  onClick={() => bookingsView.toggleView()}
+                  className={`p-2 rounded-lg transition-colors ${bookingsView.view === 'card' ? 'bg-white text-amber-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  title="Card View"
+                >
+                  <GridViewOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+            </div>
+
+            {bookingsView.view === 'table' ? (
+              <BookingTable data={filteredAndSortedBookings} onStatus={handleBookingStatus} onDelete={(id) => handleSoftDelete('booking', id)} onRestore={(id) => handleRestore('booking', id)} onHardDelete={(id) => handleHardDelete('booking', id)} getUserName={getUserName} showStatus={showStatus} />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAndSortedBookings.length === 0 ? (
+                  <p className="text-center text-zinc-400 py-6 sm:col-span-2 lg:col-span-3">No bookings found.</p>
+                ) : (
+                  filteredAndSortedBookings.map((item) => (
+                    <Card key={item._id} className="p-5 border border-zinc-100 flex flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <span className="text-xs font-mono font-bold text-amber-500">#{item.bookingNumber}</span>
+                          <h4 className="font-bold text-base m-0 mt-0.5 text-black dark:text-white">{capitalizeWords(item.service?.title) || 'Service'}</h4>
+                        </div>
+                        {item.isDeleted && (
+                          <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
+                        <p><strong>Customer:</strong> {getUserName(item.customer)}</p>
+                        <p><strong>Provider:</strong> {getUserName(item.provider)}</p>
+                        <p><strong>City:</strong> {capitalizeWords(item.city) || 'N/A'}</p>
+                        <p><strong>Payout:</strong> Rs. {item.amount}</p>
+                        <p><strong>Status:</strong> <span className="capitalize font-semibold">{showStatus(item.status)}</span></p>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                        <select
+                          className="rounded-full border border-zinc-200 px-3 py-1.5 bg-white text-zinc-700 text-xs"
+                          value={item.status}
+                          onChange={(e) => handleBookingStatus(item._id, e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="on_the_way">On The Way</option>
+                          <option value="started">Started</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                        <div className="flex items-center gap-1">
+                          {item.isDeleted ? (
+                            <>
+                              <button
+                                onClick={() => handleRestore('booking', item._id)}
+                                className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-full border border-emerald-200 transition-colors"
+                                title="Restore Booking"
+                              >
+                                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete('booking', item._id)}
+                                className="text-red-700 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                                title="Permanently Delete Booking"
+                              >
+                                <DeleteForeverOutlinedIcon fontSize="small" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleSoftDelete('booking', item._id)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-full border border-red-200 transition-colors"
+                              title="Delete Booking"
+                            >
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         )}
 
         {activeTab === 'reviews' && (
           <Card className="p-5">
             <SectionTitle title="Reviews" loading={loading} />
-            <ReviewTable data={reviews} onDelete={(id) => handleSoftDelete('review', id)} onRestore={(id) => handleRestore('review', id)} getUserName={getUserName} />
+
+            {/* Search and Sort controls */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Search reviews by customer, provider, rating or comment..."
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+              />
+              <select
+                value={reviewSort}
+                onChange={(e) => setReviewSort(e.target.value)}
+                className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-black"
+              >
+                <option value="ratingHigh">Rating: High to Low</option>
+                <option value="ratingLow">Rating: Low to High</option>
+              </select>
+            </div>
+
+            <ReviewTable data={filteredAndSortedReviews} onDelete={(id) => handleSoftDelete('review', id)} onRestore={(id) => handleRestore('review', id)} onHardDelete={(id) => handleHardDelete('review', id)} getUserName={getUserName} />
           </Card>
         )}
 
@@ -682,12 +1475,23 @@ const SuperAdminDashborad = () => {
               </form>
             </div>
 
+            {/* Search filter for locations */}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Search locations by city, state, district or pincode..."
+                value={locationSearch}
+                onChange={(e) => setLocationSearch(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border-color)] bg-[var(--bg-input)] px-4 py-2.5 text-sm text-[var(--text-main)] outline-none focus:border-black"
+              />
+            </div>
+
             {/* Locations Grid */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {locations.length === 0 && (
-                <p className="col-span-3 text-center text-sm text-[var(--text-muted)]">No locations added yet.</p>
+              {filteredLocations.length === 0 && (
+                <p className="col-span-3 text-center text-sm text-[var(--text-muted)]">No locations found.</p>
               )}
-              {locations.map((item) => (
+              {filteredLocations.map((item) => (
                 <div
                   key={item._id}
                   className="flex flex-col justify-between gap-4 rounded-[24px] border border-[var(--border-color)] bg-[var(--bg-shell)] p-5 transition-all"
@@ -733,14 +1537,13 @@ const SuperAdminDashborad = () => {
                     >
                       {item.isActive ? 'Active' : 'Inactive'}
                     </button>
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    <button
                       onClick={() => handleDeleteLocation(item._id)}
-                      className="text-red-500 hover:bg-red-500/10 hover:text-red-600 border-red-500/20"
+                      className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Delete Location"
                     >
-                      Delete
-                    </Button>
+                      <DeleteOutlineOutlinedIcon fontSize="small" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -775,7 +1578,7 @@ const SectionTitle = ({ title, loading }) => {
   )
 }
 
-const UserTable = ({ data, onStatus, onDelete, onRestore }) => {
+const UserTable = ({ data, onStatus, onDelete, onRestore, onHardDelete }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[940px] text-left text-sm">
@@ -792,21 +1595,42 @@ const UserTable = ({ data, onStatus, onDelete, onRestore }) => {
         <tbody>
           {data.map((item) => (
             <tr key={item._id} className="border-b border-zinc-100">
-              <td className="p-3 font-semibold">{`${item.firstName || ''} ${item.lastName || ''}`.trim() || 'N/A'}</td>
+              <td className="p-3 font-semibold">{capitalizeWords(`${item.firstName || ''} ${item.lastName || ''}`.trim()) || 'N/A'}</td>
               <td className="p-3">{item.email}</td>
               <td className="p-3">{item.phone}</td>
               <td className="p-3 capitalize">{item.status}</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-              <td className="flex gap-2 p-3">
-                <select className="rounded-full border border-zinc-200 px-3 py-2" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
-                  <option value="active">active</option>
-                  <option value="inactive">inactive</option>
-                  <option value="blocked">blocked</option>
+              <td className="flex items-center gap-2 p-3">
+                <select className="rounded-full border border-zinc-200 px-3 py-2 bg-white text-zinc-700" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="blocked">Blocked</option>
                 </select>
                 {item.isDeleted ? (
-                  <Button size="sm" onClick={() => onRestore(item._id)}>Restore</Button>
+                  <>
+                    <button
+                      onClick={() => onRestore(item._id)}
+                      className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                      title="Restore User"
+                    >
+                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                    </button>
+                    <button
+                      onClick={() => onHardDelete(item._id)}
+                      className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Permanently Delete User"
+                    >
+                      <DeleteForeverOutlinedIcon fontSize="small" />
+                    </button>
+                  </>
                 ) : (
-                  <Button size="sm" onClick={() => onDelete(item._id)}>Delete</Button>
+                  <button
+                    onClick={() => onDelete(item._id)}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                    title="Delete User"
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </button>
                 )}
               </td>
             </tr>
@@ -817,7 +1641,7 @@ const UserTable = ({ data, onStatus, onDelete, onRestore }) => {
   )
 }
 
-const AdminTable = ({ data, onStatus, onDelete, onRestore, getUserName, getUserEmail }) => {
+const AdminTable = ({ data, onStatus, onDelete, onRestore, onHardDelete, getUserName, getUserEmail }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1060px] text-left text-sm">
@@ -840,20 +1664,41 @@ const AdminTable = ({ data, onStatus, onDelete, onRestore, getUserName, getUserE
               <td className="p-3">{item.employeeId || 'N/A'}</td>
               <td className="p-3">
                 <span className="rounded-full bg-[#f8ebe6] px-3 py-1 text-xs font-semibold capitalize text-zinc-700">
-                  {item.category?.name || 'N/A'}
+                  {capitalizeWords(item.category?.name) || 'N/A'}
                 </span>
               </td>
               <td className="p-3 capitalize">{item.status}</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-              <td className="flex gap-2 p-3">
-                <select className="rounded-full border border-zinc-200 px-3 py-2" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
-                  <option value="active">active</option>
-                  <option value="inactive">inactive</option>
+              <td className="flex items-center gap-2 p-3">
+                <select className="rounded-full border border-zinc-200 px-3 py-2 bg-white text-zinc-700" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
                 {item.isDeleted ? (
-                  <Button size="sm" onClick={() => onRestore(item._id)}>Restore</Button>
+                  <>
+                    <button
+                      onClick={() => onRestore(item._id)}
+                      className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                      title="Restore Admin"
+                    >
+                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                    </button>
+                    <button
+                      onClick={() => onHardDelete(item._id)}
+                      className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Permanently Delete Admin"
+                    >
+                      <DeleteForeverOutlinedIcon fontSize="small" />
+                    </button>
+                  </>
                 ) : (
-                  <Button size="sm" onClick={() => onDelete(item._id)}>Delete</Button>
+                  <button
+                    onClick={() => onDelete(item._id)}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                    title="Delete Admin"
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </button>
                 )}
               </td>
             </tr>
@@ -864,7 +1709,7 @@ const AdminTable = ({ data, onStatus, onDelete, onRestore, getUserName, getUserE
   )
 }
 
-const ProviderTable = ({ data, onDelete, onRestore, getUserName, getUserEmail }) => {
+const ProviderTable = ({ data, onDelete, onRestore, onHardDelete, getUserName, getUserEmail }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[940px] text-left text-sm">
@@ -884,15 +1729,36 @@ const ProviderTable = ({ data, onDelete, onRestore, getUserName, getUserEmail })
             <tr key={item._id} className="border-b border-zinc-100">
               <td className="p-3 font-semibold">{getUserName(item)}</td>
               <td className="p-3">{getUserEmail(item)}</td>
-              <td className="p-3">{item.businessName || 'N/A'}</td>
+              <td className="p-3">{capitalizeWords(item.businessName) || 'N/A'}</td>
               <td className="p-3 capitalize">{item.kycStatus || 'N/A'}</td>
               <td className="p-3">{item.averageRating || 0}</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-              <td className="p-3">
+              <td className="p-3 flex items-center gap-2">
                 {item.isDeleted ? (
-                  <Button size="sm" onClick={() => onRestore(item._id)}>Restore</Button>
+                  <>
+                    <button
+                      onClick={() => onRestore(item._id)}
+                      className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                      title="Restore Provider"
+                    >
+                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                    </button>
+                    <button
+                      onClick={() => onHardDelete(item._id)}
+                      className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Permanently Delete Provider"
+                    >
+                      <DeleteForeverOutlinedIcon fontSize="small" />
+                    </button>
+                  </>
                 ) : (
-                  <Button size="sm" onClick={() => onDelete(item._id)}>Delete</Button>
+                  <button
+                    onClick={() => onDelete(item._id)}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                    title="Delete Provider"
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </button>
                 )}
               </td>
             </tr>
@@ -903,7 +1769,7 @@ const ProviderTable = ({ data, onDelete, onRestore, getUserName, getUserEmail })
   )
 }
 
-const BookingTable = ({ data, onStatus, onDelete, onRestore, getUserName, showStatus }) => {
+const BookingTable = ({ data, onStatus, onDelete, onRestore, onHardDelete, getUserName, showStatus }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1060px] text-left text-sm">
@@ -925,24 +1791,45 @@ const BookingTable = ({ data, onStatus, onDelete, onRestore, getUserName, showSt
               <td className="p-3 font-semibold">{item.bookingNumber}</td>
               <td className="p-3">{getUserName(item.customer)}</td>
               <td className="p-3">{getUserName(item.provider)}</td>
-              <td className="p-3">{item.city}</td>
+              <td className="p-3">{capitalizeWords(item.city)}</td>
               <td className="p-3">Rs. {item.amount}</td>
               <td className="p-3 capitalize">{showStatus(item.status)}</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-              <td className="flex gap-2 p-3">
-                <select className="rounded-full border border-zinc-200 px-3 py-2" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
-                  <option value="pending">pending</option>
-                  <option value="accepted">accepted</option>
-                  <option value="on_the_way">on the way</option>
-                  <option value="started">started</option>
-                  <option value="completed">completed</option>
-                  <option value="cancelled">cancelled</option>
-                  <option value="rejected">rejected</option>
+              <td className="flex items-center gap-2 p-3">
+                <select className="rounded-full border border-zinc-200 px-3 py-2 bg-white text-zinc-700" value={item.status} onChange={(e) => onStatus(item._id, e.target.value)}>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="on_the_way">On The Way</option>
+                  <option value="started">Started</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rejected">Rejected</option>
                 </select>
                 {item.isDeleted ? (
-                  <Button size="sm" onClick={() => onRestore(item._id)}>Restore</Button>
+                  <>
+                    <button
+                      onClick={() => onRestore(item._id)}
+                      className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                      title="Restore Booking"
+                    >
+                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                    </button>
+                    <button
+                      onClick={() => onHardDelete(item._id)}
+                      className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Permanently Delete Booking"
+                    >
+                      <DeleteForeverOutlinedIcon fontSize="small" />
+                    </button>
+                  </>
                 ) : (
-                  <Button size="sm" onClick={() => onDelete(item._id)}>Delete</Button>
+                  <button
+                    onClick={() => onDelete(item._id)}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                    title="Delete Booking"
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </button>
                 )}
               </td>
             </tr>
@@ -953,7 +1840,7 @@ const BookingTable = ({ data, onStatus, onDelete, onRestore, getUserName, showSt
   )
 }
 
-const ReviewTable = ({ data, onDelete, onRestore, getUserName }) => {
+const ReviewTable = ({ data, onDelete, onRestore, onHardDelete, getUserName }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[840px] text-left text-sm">
@@ -973,13 +1860,34 @@ const ReviewTable = ({ data, onDelete, onRestore, getUserName }) => {
               <td className="p-3 font-semibold">{getUserName(item.customer)}</td>
               <td className="p-3">{getUserName(item.provider)}</td>
               <td className="p-3">{item.rating}</td>
-              <td className="p-3">{item.review || 'N/A'}</td>
+              <td className="p-3">{capitalize(item.review) || 'N/A'}</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
-              <td className="p-3">
+              <td className="p-3 flex items-center gap-2">
                 {item.isDeleted ? (
-                  <Button size="sm" onClick={() => onRestore(item._id)}>Restore</Button>
+                  <>
+                    <button
+                      onClick={() => onRestore(item._id)}
+                      className="text-emerald-600 hover:bg-emerald-50 p-2 rounded-full border border-emerald-200 transition-colors"
+                      title="Restore Review"
+                    >
+                      <RestoreFromTrashOutlinedIcon fontSize="small" />
+                    </button>
+                    <button
+                      onClick={() => onHardDelete(item._id)}
+                      className="text-red-700 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                      title="Permanently Delete Review"
+                    >
+                      <DeleteForeverOutlinedIcon fontSize="small" />
+                    </button>
+                  </>
                 ) : (
-                  <Button size="sm" onClick={() => onDelete(item._id)}>Delete</Button>
+                  <button
+                    onClick={() => onDelete(item._id)}
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors"
+                    title="Delete Review"
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </button>
                 )}
               </td>
             </tr>

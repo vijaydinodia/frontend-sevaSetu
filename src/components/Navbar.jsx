@@ -73,7 +73,7 @@ const Navbar = ({ user: userProp, onLogout }) => {
       {/* Avatar initials */}
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white text-xs font-bold shadow-sm">
         {user?.profileImage
-          ? <img src={user.profileImage} alt="avatar" className="h-full w-full rounded-full object-cover" />
+          ? <img src={user.profileImage} alt="avatar" className="h-full w-full rounded-full object-cover" loading="lazy" />
           : (user?.firstName?.[0] || 'U').toUpperCase()
         }
       </div>

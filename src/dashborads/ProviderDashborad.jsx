@@ -13,6 +13,7 @@ import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined'
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined'
 import HighlightOffOutlinedIcon from '@mui/icons-material/HighlightOffOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import API_URL from '../api'
 import ProviderSidebar from '../components/ProviderSidebar'
 import Button from '../components/ui/Button'
@@ -20,10 +21,17 @@ import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import UseFetch from '../custom_hook/UseFetch'
 import useTheme from '../custom_hook/UseTheme'
+import { capitalize, capitalizeWords } from '../lib/utils'
+import UseView from '../custom_hook/UseView'
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined'
+import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
 
 const ProviderDashborad = () => {
   const navigate = useNavigate()
   const { theme } = useTheme()
+  const bookingsView = UseView('provider_bookings', 'card')
+  const servicesView = UseView('provider_services', 'card')
+  const reviewsView = UseView('provider_reviews', 'card')
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -69,6 +77,19 @@ const ProviderDashborad = () => {
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` },
   })
+
+  // Bookings Tab Filters, Search and Sort States
+  const [bookingFilter, setBookingFilter] = useState('all')
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [bookingSort, setBookingSort] = useState('dateNewest')
+
+  // Services Tab Search and Sort States
+  const [serviceSearch, setServiceSearch] = useState('')
+  const [serviceSort, setServiceSort] = useState('nameAsc')
+
+  // Reviews Tab Search and Sort States
+  const [reviewSearch, setReviewSearch] = useState('')
+  const [reviewSort, setReviewSort] = useState('dateNewest')
 
   // Fetch using custom hooks
   const {
@@ -282,15 +303,68 @@ const ProviderDashborad = () => {
     }
   }
 
-  // Bookings Tab Filters
-  const [bookingFilter, setBookingFilter] = useState('all')
-  const filteredBookings = bookings.filter((b) => {
-    if (bookingFilter === 'all') return true
-    if (bookingFilter === 'pending') return b.status === 'pending'
-    if (bookingFilter === 'active') return ['accepted', 'on_the_way', 'started'].includes(b.status)
-    if (bookingFilter === 'completed') return b.status === 'completed'
-    return false
-  })
+  const filteredBookings = bookings
+    .filter((b) => {
+      // 1. Status Filter
+      if (bookingFilter !== 'all') {
+        if (bookingFilter === 'pending' && b.status !== 'pending') return false
+        if (bookingFilter === 'active' && !['accepted', 'on_the_way', 'started'].includes(b.status)) return false
+        if (bookingFilter === 'completed' && b.status !== 'completed') return false
+      }
+      
+      // 2. Search Text Filter
+      const q = bookingSearch.toLowerCase().trim()
+      if (q) {
+        const bNo = b.bookingNumber?.toString() || ''
+        const sTitle = b.service?.title || b.service?.serviceName || ''
+        const cName = b.customer ? `${b.customer.firstName} ${b.customer.lastName}`.toLowerCase() : ''
+        if (!bNo.includes(q) && !sTitle.toLowerCase().includes(q) && !cName.includes(q)) {
+          return false
+        }
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (bookingSort === 'dateNewest') return new Date(b.bookingDate) - new Date(a.bookingDate)
+      if (bookingSort === 'dateOldest') return new Date(a.bookingDate) - new Date(b.bookingDate)
+      if (bookingSort === 'amountHigh') return b.amount - a.amount
+      if (bookingSort === 'amountLow') return a.amount - b.amount
+      return 0
+    })
+
+  const filteredAndSortedServices = myServices
+    .filter((ps) => {
+      const q = serviceSearch.toLowerCase().trim()
+      if (!q) return true
+      const sName = ps.service?.serviceName?.toLowerCase() || ''
+      const sDesc = ps.service?.description?.toLowerCase() || ''
+      const sCat = ps.service?.category?.name?.toLowerCase() || ''
+      return sName.includes(q) || sDesc.includes(q) || sCat.includes(q)
+    })
+    .sort((a, b) => {
+      if (serviceSort === 'priceLow') return a.price - b.price
+      if (serviceSort === 'priceHigh') return b.price - a.price
+      if (serviceSort === 'nameAsc') return (a.service?.serviceName || '').localeCompare(b.service?.serviceName || '')
+      if (serviceSort === 'nameDesc') return (b.service?.serviceName || '').localeCompare(a.service?.serviceName || '')
+      return 0
+    })
+
+  const filteredAndSortedReviews = reviews
+    .filter((r) => {
+      const q = reviewSearch.toLowerCase().trim()
+      if (!q) return true
+      const cName = r.customer ? `${r.customer.firstName} ${r.customer.lastName}`.toLowerCase() : ''
+      const reviewText = r.review?.toLowerCase() || ''
+      const ratingStr = r.rating?.toString() || ''
+      return cName.includes(q) || reviewText.includes(q) || ratingStr === q
+    })
+    .sort((a, b) => {
+      if (reviewSort === 'dateNewest') return new Date(b.createdAt) - new Date(a.createdAt)
+      if (reviewSort === 'dateOldest') return new Date(a.createdAt) - new Date(b.createdAt)
+      if (reviewSort === 'ratingHigh') return b.rating - a.rating
+      if (reviewSort === 'ratingLow') return a.rating - b.rating
+      return 0
+    })
 
   // Loader state
   const isGlobalLoading = profileLoading || bookingsLoading || reviewsLoading || categoriesLoading
@@ -321,6 +395,7 @@ const ProviderDashborad = () => {
                     className="h-full w-full object-cover"
                     src={userDetails.profileImage}
                     alt="profile"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-white">
@@ -331,10 +406,10 @@ const ProviderDashborad = () => {
             </div>
             <div>
               <h1 className="m-0 text-3xl font-bold tracking-tight">
-                {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Loading...'}
+                {userDetails ? capitalizeWords(`${userDetails.firstName} ${userDetails.lastName}`) : 'Loading...'}
               </h1>
               <p className={`mt-1 text-sm ${textMuted}`}>
-                {provider?.businessName || 'Service Provider'}
+                {provider?.businessName ? capitalizeWords(provider.businessName) : 'Service Provider'}
               </p>
             </div>
           </div>
@@ -464,9 +539,9 @@ const ProviderDashborad = () => {
                           {bookings.slice(0, 5).map((b) => (
                             <tr key={b._id} className={`border-b ${theme === 'light' ? 'border-zinc-100' : 'border-zinc-800/50'} hover:bg-black/5`}>
                               <td className="py-4 font-mono text-xs">{b.bookingNumber}</td>
-                              <td className="py-4 font-medium">{b.service?.title || 'N/A'}</td>
+                              <td className="py-4 font-medium">{capitalizeWords(b.service?.title) || 'N/A'}</td>
                               <td className="py-4">
-                                {b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Unknown'}
+                                {b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}
                               </td>
                               <td className="py-4">
                                 {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
@@ -482,7 +557,7 @@ const ProviderDashborad = () => {
                                     ? 'bg-red-500/10 text-red-500 border border-red-500/20'
                                     : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
                                 }`}>
-                                  {b.status}
+                                  {capitalizeWords(b.status.replace(/_/g, ' '))}
                                 </span>
                               </td>
                             </tr>
@@ -517,10 +592,172 @@ const ProviderDashborad = () => {
                   ))}
                 </div>
 
+                {/* Search and Sort controls */}
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                  <input
+                    type="text"
+                    placeholder="Search bookings by ID, customer name or service..."
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                    className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                  />
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={bookingSort}
+                      onChange={(e) => setBookingSort(e.target.value)}
+                      className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                    >
+                      <option value="dateNewest">Date: Newest First</option>
+                      <option value="dateOldest">Date: Oldest First</option>
+                      <option value="amountHigh">Price: High to Low</option>
+                      <option value="amountLow">Price: Low to High</option>
+                    </select>
+
+                    {/* Layout Switcher */}
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
+                      <button
+                        onClick={() => bookingsView.toggleView()}
+                        className={`p-2 rounded-lg transition-colors ${
+                          bookingsView.view === 'table'
+                            ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                        }`}
+                        title="Table View"
+                      >
+                        <TableRowsOutlinedIcon fontSize="small" />
+                      </button>
+                      <button
+                        onClick={() => bookingsView.toggleView()}
+                        className={`p-2 rounded-lg transition-colors ${
+                          bookingsView.view === 'card'
+                            ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                        }`}
+                        title="Card View"
+                      >
+                        <GridViewOutlinedIcon fontSize="small" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Bookings cards/list */}
                 {filteredBookings.length === 0 ? (
                   <div className={`dashboard-card text-center py-12 border ${cardTheme}`}>
                     <p className={textMuted}>No bookings match the filter criteria.</p>
+                  </div>
+                ) : bookingsView.view === 'table' ? (
+                  <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <table className="w-full border-collapse text-left text-sm min-w-[800px]">
+                      <thead>
+                        <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
+                          <th className="p-4 font-semibold">Booking ID</th>
+                          <th className="p-4 font-semibold">Service</th>
+                          <th className="p-4 font-semibold">Customer</th>
+                          <th className="p-4 font-semibold">Date & Time</th>
+                          <th className="p-4 font-semibold">Amount</th>
+                          <th className="p-4 font-semibold">Status</th>
+                          <th className="p-4 font-semibold text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredBookings.map((b) => (
+                          <tr key={b._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
+                            <td className="p-4 font-mono text-xs text-amber-500 font-bold">{b.bookingNumber}</td>
+                            <td className="p-4 font-medium">
+                              <div>{capitalizeWords(b.service?.title) || 'N/A'}</div>
+                              <div className="text-[10px] text-zinc-400">
+                                Category: {capitalizeWords(b.service?.category?.title) || 'N/A'}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div>{b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}</div>
+                              <div className="text-xs text-zinc-400">{b.customer?.phone || 'N/A'}</div>
+                            </td>
+                            <td className="p-4">
+                              {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
+                            </td>
+                            <td className="p-4 font-bold text-amber-500">${b.amount}</td>
+                            <td className="p-4">
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                b.status === 'completed'
+                                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                  : b.status === 'pending'
+                                  ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                  : b.status === 'rejected' || b.status === 'cancelled'
+                                  ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                                  : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
+                              }`}>
+                                {capitalizeWords(b.status.replace(/_/g, ' '))}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex flex-row justify-center gap-2">
+                                {b.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="gradient"
+                                      disabled={actionLoading}
+                                      onClick={() => handleUpdateStatus(b._id, 'accepted')}
+                                    >
+                                      Accept
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={actionLoading}
+                                      onClick={() => handleUpdateStatus(b._id, 'rejected')}
+                                    >
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+
+                                {b.status === 'accepted' && (
+                                  <Button
+                                    size="sm"
+                                    variant="gradient"
+                                    disabled={actionLoading}
+                                    onClick={() => handleUpdateStatus(b._id, 'on_the_way')}
+                                  >
+                                    On The Way
+                                  </Button>
+                                )}
+
+                                {b.status === 'on_the_way' && (
+                                  <Button
+                                    size="sm"
+                                    variant="gradient"
+                                    disabled={actionLoading}
+                                    onClick={() => handleUpdateStatus(b._id, 'started')}
+                                  >
+                                    Start Job
+                                  </Button>
+                                )}
+
+                                {b.status === 'started' && (
+                                  <Button
+                                    size="sm"
+                                    variant="gradient"
+                                    disabled={actionLoading}
+                                    onClick={() => handleUpdateStatus(b._id, 'completed')}
+                                  >
+                                    Complete Job
+                                  </Button>
+                                )}
+
+                                {['completed', 'rejected', 'cancelled'].includes(b.status) && (
+                                  <span className={`text-xs font-semibold ${textMuted}`}>
+                                    No actions
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -538,20 +775,20 @@ const ProviderDashborad = () => {
                                 ? 'bg-red-500/10 text-red-500'
                                 : 'bg-indigo-500/10 text-indigo-500'
                             }`}>
-                              {b.status}
+                              {capitalizeWords(b.status.replace(/_/g, ' '))}
                             </span>
                           </div>
 
-                          <h4 className="text-lg font-bold">{b.service?.title || 'N/A'}</h4>
+                          <h4 className="text-lg font-bold">{capitalizeWords(b.service?.title) || 'N/A'}</h4>
                           <p className={`text-xs mt-1 font-semibold text-zinc-400`}>
-                            Category: {b.service?.category?.title || 'N/A'}
+                            Category: {capitalizeWords(b.service?.category?.title) || 'N/A'}
                           </p>
 
                           <div className="mt-4 space-y-2 text-sm">
                             <p className="flex justify-between">
                               <span className={textMuted}>Customer:</span>
                               <span className="font-semibold">
-                                {b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Unknown'}
+                                {b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}
                               </span>
                             </p>
                             <p className="flex justify-between">
@@ -567,7 +804,7 @@ const ProviderDashborad = () => {
                             <p className="flex justify-between">
                               <span className={textMuted}>Address:</span>
                               <span className="font-semibold text-right max-w-[70%] truncate" title={b.address}>
-                                {b.address}, {b.city}
+                                {b.address}, {capitalizeWords(b.city)}
                               </span>
                             </p>
                             <p className="flex justify-between border-t pt-2 mt-2 border-zinc-100 dark:border-zinc-800">
@@ -685,22 +922,26 @@ const ProviderDashborad = () => {
                           }`}
                         >
                           <div className="flex items-center gap-3.5">
-                            {/* Avatar Category Letter */}
-                            <div className={`h-11 w-11 rounded-xl flex items-center justify-center font-bold text-base shadow-inner ${
-                              isApproved
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : isRejected
-                                ? 'bg-red-500/10 text-red-500'
-                                : 'bg-amber-500/10 text-amber-500'
-                            }`}>
-                              {letter}
-                            </div>
+                            {/* Avatar Category Letter or Image */}
+                            {catApp.category?.image ? (
+                              <img className="h-11 w-11 rounded-xl object-cover" src={catApp.category.image} alt={catApp.category.name} loading="lazy" />
+                            ) : (
+                              <div className={`h-11 w-11 rounded-xl flex items-center justify-center font-bold text-base shadow-inner ${
+                                isApproved
+                                  ? 'bg-emerald-500/10 text-emerald-500'
+                                  : isRejected
+                                  ? 'bg-red-500/10 text-red-500'
+                                  : 'bg-amber-500/10 text-amber-500'
+                              }`}>
+                                {letter}
+                              </div>
+                            )}
                             <div className="flex flex-col min-w-0">
                               <span className="font-semibold text-base truncate text-zinc-900 dark:text-zinc-50">
-                                {catApp.category?.name ? (catApp.category.name.charAt(0).toUpperCase() + catApp.category.name.slice(1)) : 'Unknown'}
+                                {catApp.category?.name ? capitalizeWords(catApp.category.name) : 'Unknown'}
                               </span>
                               <span className={`text-xs truncate max-w-[150px] ${textMuted}`}>
-                                {catApp.category?.description || 'Professional Domain'}
+                                {catApp.category?.description ? capitalize(catApp.category.description) : 'Professional Domain'}
                               </span>
                             </div>
                           </div>
@@ -711,7 +952,7 @@ const ProviderDashborad = () => {
                               <span className={`h-1.5 w-1.5 rounded-full ${
                                 isApproved ? 'bg-emerald-500 animate-pulse' : isRejected ? 'bg-red-500' : 'bg-amber-500 animate-pulse'
                               }`} />
-                              {catApp.status}
+                              {capitalize(catApp.status)}
                             </span>
                           </div>
                         </div>
@@ -774,7 +1015,7 @@ const ProviderDashborad = () => {
                               .filter(c => !provider?.categories?.some(pa => (pa.category?._id || pa.category) === c._id))
                               .map(c => (
                                 <option key={c._id} value={c._id}>
-                                  {c.name.charAt(0).toUpperCase() + c.name.slice(1)}
+                                  {capitalizeWords(c.name)}
                                 </option>
                               ))}
                           </select>
@@ -836,7 +1077,7 @@ const ProviderDashborad = () => {
                               .filter(c => provider?.categories?.some(cat => (cat.category?._id || cat.category) === c._id && cat.status === 'approved'))
                               .map((c) => (
                                 <option key={c._id} value={c._id}>
-                                  {c.name.charAt(0).toUpperCase() + c.name.slice(1)}
+                                  {capitalizeWords(c.name)}
                                 </option>
                               ))}
                           </select>
@@ -889,6 +1130,58 @@ const ProviderDashborad = () => {
                 {/* Current Services List */}
                 <div className={`dashboard-card border rounded-[28px] p-6 md:p-8 ${cardTheme} shadow-xl`}>
                   <h3 className="text-2xl font-bold tracking-tight mb-4">Your Offered Services</h3>
+
+                  {/* Search and Sort controls */}
+                  {myServices.length > 0 && (
+                    <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                      <input
+                        type="text"
+                        placeholder="Search offered services..."
+                        value={serviceSearch}
+                        onChange={(e) => setServiceSearch(e.target.value)}
+                        className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                      />
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={serviceSort}
+                          onChange={(e) => setServiceSort(e.target.value)}
+                          className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                        >
+                          <option value="nameAsc">Name: A to Z</option>
+                          <option value="nameDesc">Name: Z to A</option>
+                          <option value="priceLow">Price: Low to High</option>
+                          <option value="priceHigh">Price: High to Low</option>
+                        </select>
+
+                        {/* Layout Switcher */}
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
+                          <button
+                            onClick={() => servicesView.toggleView()}
+                            className={`p-2 rounded-lg transition-colors ${
+                              servicesView.view === 'table'
+                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                            }`}
+                            title="Table View"
+                          >
+                            <TableRowsOutlinedIcon fontSize="small" />
+                          </button>
+                          <button
+                            onClick={() => servicesView.toggleView()}
+                            className={`p-2 rounded-lg transition-colors ${
+                              servicesView.view === 'card'
+                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                            }`}
+                            title="Card View"
+                          >
+                            <GridViewOutlinedIcon fontSize="small" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {loadingServices ? (
                     <div className="flex items-center gap-3 py-6 justify-center text-sm">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
@@ -899,9 +1192,58 @@ const ProviderDashborad = () => {
                       <p className={`m-0 text-base font-semibold ${textMuted}`}>No services in your collection yet.</p>
                       <p className="text-xs text-zinc-400 mt-1">Design services using the form above to add them here.</p>
                     </div>
+                  ) : filteredAndSortedServices.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <p className={`m-0 text-base font-semibold ${textMuted}`}>No services match your search filters.</p>
+                    </div>
+                  ) : servicesView.view === 'table' ? (
+                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                      <table className="w-full border-collapse text-left text-sm min-w-[700px]">
+                        <thead>
+                          <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
+                            <th className="p-4 font-semibold">Service Name</th>
+                            <th className="p-4 font-semibold">Category</th>
+                            <th className="p-4 font-semibold">Description</th>
+                            <th className="p-4 font-semibold">Base Price</th>
+                            <th className="p-4 font-semibold">Your Price</th>
+                            <th className="p-4 font-semibold text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAndSortedServices.map((ps) => (
+                            <tr key={ps._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
+                              <td className="p-4 font-bold text-zinc-900 dark:text-zinc-50">
+                                {capitalizeWords(ps.service?.serviceName)}
+                              </td>
+                              <td className="p-4">
+                                {ps.service?.category && (
+                                  <span className="inline-flex text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                    {ps.service.category.name ? capitalizeWords(ps.service.category.name) : 'General'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 max-w-[250px] truncate" title={ps.service?.description}>
+                                {capitalize(ps.service?.description)}
+                              </td>
+                              <td className="p-4 text-zinc-400 font-medium">₹{ps.service?.basePrice}</td>
+                              <td className="p-4 font-bold text-amber-500">₹{ps.price}</td>
+                              <td className="p-4 text-center">
+                                <button
+                                  onClick={() => handleRemoveService(ps._id)}
+                                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-2 rounded-full border border-red-200 dark:border-red-900/50 transition-colors shrink-0"
+                                  title="Remove Service"
+                                >
+                                  <DeleteOutlineOutlinedIcon fontSize="small" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
                     <div className="grid gap-5 sm:grid-cols-2">
-                      {myServices.map((ps) => (
+                      {filteredAndSortedServices.map((ps) => (
                         <div
                           key={ps._id}
                           className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] hover:shadow-md ${
@@ -914,11 +1256,11 @@ const ProviderDashborad = () => {
                             <div className="flex items-start justify-between gap-3 mb-2">
                               <div>
                                 <h4 className="font-bold text-lg m-0 text-zinc-900 dark:text-zinc-50 leading-snug">
-                                  {ps.service?.serviceName}
+                                  {capitalizeWords(ps.service?.serviceName)}
                                 </h4>
                                 {ps.service?.category && (
                                   <span className="inline-flex text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 mt-2">
-                                    {ps.service.category.name ? (ps.service.category.name.charAt(0).toUpperCase() + ps.service.category.name.slice(1)) : 'General'}
+                                    {ps.service.category.name ? capitalizeWords(ps.service.category.name) : 'General'}
                                   </span>
                                 )}
                               </div>
@@ -927,7 +1269,7 @@ const ProviderDashborad = () => {
                               </span>
                             </div>
                             <p className={`text-xs leading-relaxed m-0 mt-2 ${textMuted} line-clamp-3 mb-4`}>
-                              {ps.service?.description}
+                              {capitalize(ps.service?.description)}
                             </p>
                           </div>
 
@@ -935,14 +1277,13 @@ const ProviderDashborad = () => {
                             <span className="text-xs text-zinc-400 font-medium">
                               Base Price: ₹{ps.service?.basePrice}
                             </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-500 border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 shrink-0"
+                            <button
                               onClick={() => handleRemoveService(ps._id)}
+                              className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors shrink-0"
+                              title="Remove Service"
                             >
-                              Remove
-                            </Button>
+                              <DeleteOutlineOutlinedIcon fontSize="small" />
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -957,16 +1298,107 @@ const ProviderDashborad = () => {
               <div className="flex flex-col gap-6">
                 <div className={`dashboard-card border ${cardTheme}`}>
                   <h3 className="text-xl font-bold mb-4">Customer Reviews</h3>
+
+                  {/* Search and Sort controls */}
+                  {reviews.length > 0 && (
+                    <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                      <input
+                        type="text"
+                        placeholder="Search reviews by customer name, rating or comment..."
+                        value={reviewSearch}
+                        onChange={(e) => setReviewSearch(e.target.value)}
+                        className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                      />
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={reviewSort}
+                          onChange={(e) => setReviewSort(e.target.value)}
+                          className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
+                        >
+                          <option value="dateNewest">Date: Newest First</option>
+                          <option value="dateOldest">Date: Oldest First</option>
+                          <option value="ratingHigh">Rating: Highest First</option>
+                          <option value="ratingLow">Rating: Lowest First</option>
+                        </select>
+
+                        {/* Layout Switcher */}
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
+                          <button
+                            onClick={() => reviewsView.toggleView()}
+                            className={`p-2 rounded-lg transition-colors ${
+                              reviewsView.view === 'table'
+                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                            }`}
+                            title="Table View"
+                          >
+                            <TableRowsOutlinedIcon fontSize="small" />
+                          </button>
+                          <button
+                            onClick={() => reviewsView.toggleView()}
+                            className={`p-2 rounded-lg transition-colors ${
+                              reviewsView.view === 'card'
+                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
+                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
+                            }`}
+                            title="Card View"
+                          >
+                            <GridViewOutlinedIcon fontSize="small" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {reviews.length === 0 ? (
                     <p className={`py-6 text-center ${textMuted}`}>No reviews received yet.</p>
+                  ) : filteredAndSortedReviews.length === 0 ? (
+                    <p className={`py-6 text-center ${textMuted}`}>No reviews match your filters.</p>
+                  ) : reviewsView.view === 'table' ? (
+                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                      <table className="w-full border-collapse text-left text-sm min-w-[700px]">
+                        <thead>
+                          <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
+                            <th className="p-4 font-semibold">Customer</th>
+                            <th className="p-4 font-semibold">Rating</th>
+                            <th className="p-4 font-semibold">Review</th>
+                            <th className="p-4 font-semibold">Booking ID</th>
+                            <th className="p-4 font-semibold">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredAndSortedReviews.map((r) => (
+                            <tr key={r._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
+                              <td className="p-4 font-semibold">
+                                {r.customer ? capitalizeWords(`${r.customer.firstName} ${r.customer.lastName}`) : 'Anonymous'}
+                              </td>
+                              <td className="p-4">
+                                <div className="flex gap-0.5 text-amber-500">
+                                  {Array.from({ length: r.rating }).map((_, idx) => (
+                                    <StarRateOutlinedIcon key={idx} style={{ fontSize: 16 }} />
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="p-4 italic text-zinc-600 dark:text-zinc-300">
+                                "{capitalize(r.review) || 'No comment text provided'}"
+                              </td>
+                              <td className="p-4 font-mono text-xs">{r.booking?.bookingNumber || 'N/A'}</td>
+                              <td className="p-4 text-xs text-zinc-400">
+                                {new Date(r.createdAt).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {reviews.map((r) => (
+                      {filteredAndSortedReviews.map((r) => (
                         <div key={r._id} className={`p-5 rounded-2xl border ${theme === 'light' ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-800 bg-zinc-800/40'} flex flex-col justify-between`}>
                           <div>
                             <div className="flex items-center justify-between mb-3">
                               <span className="font-semibold text-sm">
-                                {r.customer ? `${r.customer.firstName} ${r.customer.lastName}` : 'Anonymous'}
+                                {r.customer ? capitalizeWords(`${r.customer.firstName} ${r.customer.lastName}`) : 'Anonymous'}
                               </span>
                               <div className="flex gap-0.5 text-amber-500">
                                 {Array.from({ length: r.rating }).map((_, idx) => (
@@ -975,7 +1407,7 @@ const ProviderDashborad = () => {
                               </div>
                             </div>
                             <p className="text-sm italic text-zinc-600 dark:text-zinc-300">
-                              "{r.review || 'No comment text provided'}"
+                              "{capitalize(r.review) || 'No comment text provided'}"
                             </p>
                           </div>
                           <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-xs text-zinc-400">
@@ -1005,6 +1437,7 @@ const ProviderDashborad = () => {
                             className="h-full w-full object-cover"
                             src={profileForm.profileImage}
                             alt="profile"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-white">
@@ -1090,7 +1523,7 @@ const ProviderDashborad = () => {
                         <option value="">Select Category</option>
                         {categories.map((cat) => (
                           <option key={cat._id} value={cat._id}>
-                            {cat.name}
+                            {capitalizeWords(cat.name)}
                           </option>
                         ))}
                       </select>

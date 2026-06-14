@@ -11,6 +11,8 @@ import Button from './ui/Button'
 import Card from './ui/Card'
 import useTheme from '../custom_hook/UseTheme'
 import Navbar from './Navbar'
+import Footer from './Footer'
+import { capitalize, capitalizeWords } from '../lib/utils'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -19,6 +21,7 @@ const Home = () => {
   const [categories, setCategories] = useState([])
   const [services, setServices] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('priceLow')
   const [selectedService, setSelectedService] = useState(null)
   const [bookingForm, setBookingForm] = useState({
     address: '',
@@ -156,23 +159,38 @@ const Home = () => {
     return '/user-dashboard'
   }
 
-  // Search filtering logic
-  const filteredServices = services.filter((ps) => {
-    const q = searchQuery.toLowerCase().trim()
-    if (!q) return true
-    
-    const serviceName = ps.service?.serviceName?.toLowerCase() || ''
-    const categoryName = ps.service?.category?.name?.toLowerCase() || ''
-    const providerBusiness = ps.provider?.businessName?.toLowerCase() || ''
-    const providerName = `${ps.provider?.user?.firstName || ''} ${ps.provider?.user?.lastName || ''}`.toLowerCase()
+  // Search filtering and sorting logic
+  const filteredServices = services
+    .filter((ps) => {
+      const q = searchQuery.toLowerCase().trim()
+      if (!q) return true
+      
+      const serviceName = ps.service?.serviceName?.toLowerCase() || ''
+      const categoryName = ps.service?.category?.name?.toLowerCase() || ''
+      const providerBusiness = ps.provider?.businessName?.toLowerCase() || ''
+      const providerName = `${ps.provider?.user?.firstName || ''} ${ps.provider?.user?.lastName || ''}`.toLowerCase()
 
-    return (
-      serviceName.includes(q) ||
-      categoryName.includes(q) ||
-      providerBusiness.includes(q) ||
-      providerName.includes(q)
-    )
-  })
+      return (
+        serviceName.includes(q) ||
+        categoryName.includes(q) ||
+        providerBusiness.includes(q) ||
+        providerName.includes(q)
+      )
+    })
+    .sort((a, b) => {
+      const priceA = a.price || a.service?.basePrice || 0
+      const priceB = b.price || b.service?.basePrice || 0
+      if (sortBy === 'priceLow') {
+        return priceA - priceB
+      }
+      if (sortBy === 'priceHigh') {
+        return priceB - priceA
+      }
+      if (sortBy === 'experience') {
+        return (b.provider?.experience || 0) - (a.provider?.experience || 0)
+      }
+      return 0
+    })
 
   return (
     <main className={`min-h-screen transition-colors duration-200 ${bgTheme}`}>
@@ -292,19 +310,32 @@ const Home = () => {
             Book verified local professionals with secure time slots and transparent pricing.
           </p>
 
-          {/* Search bar */}
-          <div className="mb-10 max-w-md mx-auto">
+          {/* Search and Sort controls */}
+          <div className="mb-10 max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Search services, categories or providers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full rounded-2xl border px-5 py-3.5 text-sm outline-none transition duration-150 ${
+              className={`flex-1 rounded-2xl border px-5 py-3.5 text-sm outline-none transition duration-150 ${
                 theme === 'light'
                   ? 'border-zinc-200 bg-white text-zinc-900 focus:border-black shadow-sm'
                   : 'border-zinc-800 bg-zinc-900 text-zinc-100 focus:border-white shadow-md'
               }`}
             />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className={`rounded-2xl border px-5 py-3.5 text-sm outline-none transition duration-150 ${
+                theme === 'light'
+                  ? 'border-zinc-200 bg-white text-zinc-900 focus:border-black shadow-sm'
+                  : 'border-zinc-800 bg-zinc-900 text-zinc-100 focus:border-white shadow-md'
+              }`}
+            >
+              <option value="priceLow">Price: Low to High</option>
+              <option value="priceHigh">Price: High to Low</option>
+              <option value="experience">Experience: Highest First</option>
+            </select>
           </div>
 
           {filteredServices.length === 0 ? (
@@ -321,22 +352,22 @@ const Home = () => {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-500 capitalize">
-                        {ps.service?.category?.name || 'Service'}
+                        {capitalizeWords(ps.service?.category?.name) || 'Service'}
                       </span>
                       <span className="text-lg font-bold text-amber-500">
                         ₹{ps.price || ps.service?.basePrice}
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold mb-2">{ps.service?.serviceName}</h3>
+                    <h3 className="text-lg font-bold mb-2">{capitalizeWords(ps.service?.serviceName)}</h3>
                     <p className={`text-xs ${textMuted} mb-4 line-clamp-3`}>
-                      {ps.service?.description}
+                      {capitalize(ps.service?.description)}
                     </p>
 
                     <div className={`mt-auto border-t pt-4 ${theme === 'light' ? 'border-zinc-100' : 'border-zinc-800'}`}>
                       <p className="text-xs text-zinc-400 font-medium">Provider Info</p>
                       <p className="text-sm font-semibold m-0 mt-0.5">
-                        {ps.provider?.businessName || `${ps.provider?.user?.firstName} ${ps.provider?.user?.lastName || ''}`}
+                        {ps.provider?.businessName ? capitalizeWords(ps.provider.businessName) : capitalizeWords(`${ps.provider?.user?.firstName || ''} ${ps.provider?.user?.lastName || ''}`)}
                       </p>
                       <p className={`text-xs ${textMuted}`}>
                         Experience: {ps.provider?.experience || 0} years
@@ -376,11 +407,15 @@ const Home = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {categories.map((cat) => (
                 <Card key={cat._id} className={`p-5 text-center flex flex-col items-center gap-3 border ${cardTheme} hover:-translate-y-1 transition duration-200`}>
-                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">
-                    {(cat.name || 'C')[0]}
-                  </div>
-                  <h4 className="font-bold text-base m-0">{cat.name || 'N/A'}</h4>
-                  <p className={`text-xs m-0 ${textMuted} line-clamp-2`}>{cat.description || 'Verified local services'}</p>
+                  {cat.image ? (
+                    <img className="h-12 w-12 rounded-2xl object-cover" src={cat.image} alt={cat.name} loading="lazy" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">
+                      {(cat.name || 'C')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <h4 className="font-bold text-base m-0">{capitalizeWords(cat.name) || 'N/A'}</h4>
+                  <p className={`text-xs m-0 ${textMuted} line-clamp-2`}>{capitalize(cat.description) || 'Verified local services'}</p>
                 </Card>
               ))}
             </div>
@@ -394,9 +429,9 @@ const Home = () => {
           <Card className={`w-full max-w-lg overflow-y-auto max-h-[90vh] p-6 shadow-2xl border ${cardTheme}`}>
             <div className="flex items-center justify-between border-b pb-4 mb-4">
               <div>
-                <h3 className="text-lg font-bold">Book {selectedService.service?.serviceName}</h3>
+                <h3 className="text-lg font-bold">Book {capitalizeWords(selectedService.service?.serviceName)}</h3>
                 <p className={`text-xs ${textMuted}`}>
-                  Provider: {selectedService.provider?.businessName}
+                  Provider: {selectedService.provider?.businessName ? capitalizeWords(selectedService.provider.businessName) : capitalizeWords(`${selectedService.provider?.user?.firstName || ''} ${selectedService.provider?.user?.lastName || ''}`)}
                 </p>
               </div>
               <button
@@ -551,46 +586,7 @@ const Home = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-zinc-950 text-zinc-400 py-12 px-5 border-t border-zinc-800">
-        <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="flex flex-col gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white text-lg font-bold">S</span>
-            <p className="text-sm font-semibold text-white">SevaSetu Portal</p>
-            <p className="text-xs">
-              Bridging the gap between talented service providers and customers in real time.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Quick Links</h4>
-            <div className="flex flex-col gap-2 text-sm">
-              <a href="#how" className="hover:text-amber-500 transition">How it works</a>
-              <a href="#services" className="hover:text-amber-500 transition">Services</a>
-              <a href="#categories" className="hover:text-amber-500 transition">Categories</a>
-              <Link to="/login" className="hover:text-amber-500 transition">Login</Link>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Partner Program</h4>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link to="/become-provider" className="text-amber-500 font-semibold hover:underline flex items-center gap-1.5">
-                Become a Provider &rarr;
-              </Link>
-              <p className="text-xs leading-relaxed">
-                Grow your business, manage bookings, and increase your earnings with our dashboard.
-              </p>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Support</h4>
-            <p className="text-xs leading-relaxed">
-              Have questions? Contact our operations support team anytime at support@sevasetu.com
-            </p>
-            <p className="text-xs mt-4">
-              &copy; {new Date().getFullYear()} SevaSetu. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   )
 }
