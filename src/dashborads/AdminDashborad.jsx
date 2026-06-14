@@ -27,15 +27,23 @@ const AdminDashborad = () => {
   const [providers, setProviders] = useState([])
   const [bookings, setBookings] = useState([])
   const [reviews, setReviews] = useState([])
+  const [pendingApplications, setPendingApplications] = useState([])
+  const [selectedApplication, setSelectedApplication] = useState(null)
+  const [applicationLoading, setApplicationLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [selectedDocs, setSelectedDocs] = useState(null)
 
   // for bookings by provider view
   const [selectedProvider, setSelectedProvider] = useState(null)
   const [providerBookings, setProviderBookings] = useState([])
   const [providerBookingsLoading, setProviderBookingsLoading] = useState(false)
+
+  const [locations, setLocations] = useState([])
+  const [locationForm, setLocationForm] = useState({ city: '', state: '', district: '', pincodes: '' })
+  const [locationLoading, setLocationLoading] = useState(false)
 
   const token = localStorage.getItem('token')
 
@@ -59,11 +67,13 @@ const AdminDashborad = () => {
         return
       }
 
-      const [profileRes, providerRes, bookingRes, reviewRes] = await Promise.all([
+      const [profileRes, providerRes, bookingRes, reviewRes, pendingRes, locationRes] = await Promise.all([
         axios.get(`${API_URL}/admin/profile`, getHeaders()),
         axios.get(`${API_URL}/admin/provider/getall`, getHeaders()),
         axios.get(`${API_URL}/admin/booking/by-category`, getHeaders()),
         axios.get(`${API_URL}/admin/review/getall`, getHeaders()),
+        axios.get(`${API_URL}/admin/provider/applications/pending`, getHeaders()),
+        axios.get(`${API_URL}/location/getall`, getHeaders()),
       ])
 
       const profileUser = profileRes.data.data?.user || profileRes.data.data || savedUser
@@ -71,6 +81,8 @@ const AdminDashborad = () => {
       setProviders(providerRes.data.data || [])
       setBookings(bookingRes.data.data || [])
       setReviews(reviewRes.data.data || [])
+      setPendingApplications(pendingRes.data.data || [])
+      setLocations(locationRes.data.data || [])
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
       if (error.response?.status === 401) navigate('/login')
@@ -89,12 +101,64 @@ const AdminDashborad = () => {
     navigate('/login')
   }
 
+  const handleLocationFormChange = (e) => {
+    const { name, value } = e.target
+    setLocationForm({ ...locationForm, [name]: value })
+  }
+
+  const handleCreateLocation = async (e) => {
+    e.preventDefault()
+    if (!locationForm.city || !locationForm.state || !locationForm.district) return
+    setLocationLoading(true)
+    try {
+      const res = await axios.post(`${API_URL}/location/add`, locationForm, getHeaders())
+      if (res.data?.success) {
+        setMessage(res.data.message || 'Location added successfully!')
+        setLocationForm({ city: '', state: '', district: '', pincodes: '' })
+        const locRes = await axios.get(`${API_URL}/location/getall`, getHeaders())
+        setLocations(locRes.data.data || [])
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.message || err.message)
+    } finally {
+      setLocationLoading(false)
+    }
+  }
+
+  const handleToggleLocationStatus = async (id) => {
+    try {
+      const res = await axios.put(`${API_URL}/location/status/${id}`, {}, getHeaders())
+      if (res.data?.success) {
+        setMessage(res.data.message || 'Status updated!')
+        const locRes = await axios.get(`${API_URL}/location/getall`, getHeaders())
+        setLocations(locRes.data.data || [])
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.message || err.message)
+    }
+  }
+
+  const handleTogglePincodeStatus = async (locationId, pincode) => {
+    try {
+      const res = await axios.put(`${API_URL}/location/pincode/status`, { locationId, pincode }, getHeaders())
+      if (res.data?.success) {
+        setMessage(res.data.message || 'Pincode status updated!')
+        const locRes = await axios.get(`${API_URL}/location/getall`, getHeaders())
+        setLocations(locRes.data.data || [])
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.message || err.message)
+    }
+  }
+
   // approve provider - sends email automatically from backend
   const handleApproveProvider = async (id) => {
     try {
       const res = await axios.put(`${API_URL}/admin/provider/approve/${id}`, {}, getHeaders())
       setMessage(res.data.message || 'Provider approved and email sent')
       fetchData()
+      // go back to applications list after action
+      if (activeTab === 'applicationDetail') setActiveTab('applications')
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
     }
@@ -106,8 +170,23 @@ const AdminDashborad = () => {
       const res = await axios.put(`${API_URL}/admin/provider/reject/${id}`, {}, getHeaders())
       setMessage(res.data.message || 'Provider rejected')
       fetchData()
+      if (activeTab === 'applicationDetail') setActiveTab('applications')
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
+    }
+  }
+
+  // view full application detail
+  const handleViewApplication = async (id) => {
+    setApplicationLoading(true)
+    setActiveTab('applicationDetail')
+    try {
+      const res = await axios.get(`${API_URL}/admin/provider/applications/${id}`, getHeaders())
+      setSelectedApplication(res.data.data)
+    } catch (error) {
+      setMessage(error.response?.data?.message || error.message)
+    } finally {
+      setApplicationLoading(false)
     }
   }
 
@@ -265,6 +344,14 @@ const AdminDashborad = () => {
 
   const statCards = [
     {
+      title: 'Applications',
+      value: pendingApplications.length,
+      icon: <PendingActionsOutlinedIcon />,
+      tab: 'applications',
+      bg: 'bg-red-50',
+      text: 'text-red-500',
+    },
+    {
       title: 'Providers',
       value: providers.length,
       icon: <WorkOutlineOutlinedIcon />,
@@ -279,14 +366,6 @@ const AdminDashborad = () => {
       tab: 'providers',
       bg: 'bg-emerald-50',
       text: 'text-emerald-600',
-    },
-    {
-      title: 'Pending KYC',
-      value: pendingProviders,
-      icon: <PendingActionsOutlinedIcon />,
-      tab: 'providers',
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-600',
     },
     {
       title: 'Bookings',
@@ -305,7 +384,7 @@ const AdminDashborad = () => {
       text: 'text-emerald-600',
     },
     {
-      title: 'Pending',
+      title: 'Pending Bookings',
       value: pendingBookings,
       icon: <PendingActionsOutlinedIcon />,
       tab: 'bookings',
@@ -341,6 +420,7 @@ const AdminDashborad = () => {
         setActiveTab={setActiveTab}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
+        pendingCount={pendingApplications.length}
       />
 
       {/* Main */}
@@ -523,6 +603,199 @@ const AdminDashborad = () => {
             </div>
           )}
 
+          {/* ── APPLICATIONS TAB ── */}
+          {activeTab === 'applications' && (
+            <Card className="p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 className="m-0 text-2xl font-semibold text-black">Pending Applications</h2>
+                  <p className="mt-1 text-sm text-zinc-500">Review provider applications in your assigned category before approving or rejecting.</p>
+                </div>
+                <span className="rounded-full bg-yellow-100 px-4 py-1.5 text-sm font-semibold text-yellow-700">
+                  {pendingApplications.length} Pending
+                </span>
+              </div>
+
+              {pendingApplications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <PendingActionsOutlinedIcon style={{ fontSize: 48 }} className="mb-3 text-zinc-300" />
+                  <p className="text-lg font-semibold text-zinc-400">No pending applications</p>
+                  <p className="text-sm text-zinc-400">All applications in your category have been reviewed.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {pendingApplications.map((app) => (
+                    <div key={app._id} className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
+                          {(app?.user?.firstName?.[0] || 'P').toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="m-0 truncate font-semibold text-black">
+                            {app?.user?.firstName} {app?.user?.lastName}
+                          </p>
+                          <p className="m-0 truncate text-xs text-zinc-500">{app?.user?.email}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Business</span>
+                          <span className="font-semibold text-black">{app.businessName || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Experience</span>
+                          <span className="font-semibold text-black">{app.experience || 0} yrs</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Applied</span>
+                          <span className="font-semibold text-black">{new Date(app.createdAt).toLocaleDateString('en-IN')}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleViewApplication(app._id)}
+                        className="mt-4 w-full rounded-2xl bg-black py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                      >
+                        View Full Application →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── APPLICATION DETAIL TAB ── */}
+          {activeTab === 'applicationDetail' && (
+            <div className="space-y-5">
+              <button
+                className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-600 hover:bg-zinc-50"
+                onClick={() => setActiveTab('applications')}
+              >
+                ← Back to Applications
+              </button>
+
+              {applicationLoading ? (
+                <Card className="p-10 text-center text-sm text-zinc-400">Loading application details...</Card>
+              ) : selectedApplication ? (
+                <>
+                  {/* Action bar */}
+                  <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+                    <div>
+                      <p className="m-0 text-sm text-zinc-500">Application from</p>
+                      <h2 className="m-0 text-xl font-semibold text-black">
+                        {selectedApplication.personalInfo?.firstName} {selectedApplication.personalInfo?.lastName}
+                      </h2>
+                      <p className="mt-1 text-xs text-zinc-400">
+                        Submitted on {new Date(selectedApplication.submittedAt).toLocaleDateString('en-IN')}
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      {selectedApplication.kycStatus === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleApproveProvider(selectedApplication.applicationId)}
+                            className="rounded-2xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600"
+                          >
+                            ✓ Approve & Send Credentials
+                          </button>
+                          <button
+                            onClick={() => handleRejectProvider(selectedApplication.applicationId)}
+                            className="rounded-2xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100"
+                          >
+                            ✕ Reject Application
+                          </button>
+                        </>
+                      )}
+                      {selectedApplication.kycStatus !== 'pending' && (
+                        <span className={`rounded-full px-4 py-2 text-sm font-semibold capitalize ${selectedApplication.kycStatus === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                          {selectedApplication.kycStatus}
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    {/* Personal Info */}
+                    <Card className="p-5">
+                      <h3 className="mb-4 text-base font-semibold text-black">Personal Information</h3>
+                      <div className="space-y-3 text-sm">
+                        {[
+                          ['Full Name', `${selectedApplication.personalInfo?.firstName} ${selectedApplication.personalInfo?.lastName}`],
+                          ['Email', selectedApplication.personalInfo?.email],
+                          ['Phone', selectedApplication.personalInfo?.phone],
+                          ['City', selectedApplication.personalInfo?.address?.city || 'N/A'],
+                          ['State', selectedApplication.personalInfo?.address?.state || 'N/A'],
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex justify-between rounded-xl bg-zinc-50 px-4 py-2.5">
+                            <span className="text-zinc-500">{label}</span>
+                            <span className="font-semibold text-black">{value || 'N/A'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    {/* Business Info */}
+                    <Card className="p-5">
+                      <h3 className="mb-4 text-base font-semibold text-black">Business Information</h3>
+                      <div className="space-y-3 text-sm">
+                        {[
+                          ['Business Name', selectedApplication.businessInfo?.businessName],
+                          ['Category', selectedApplication.businessInfo?.category?.name],
+                          ['Experience', `${selectedApplication.businessInfo?.experience || 0} years`],
+                          ['Skills', (selectedApplication.businessInfo?.skills || []).join(', ') || 'N/A'],
+                          ['Service Areas', (selectedApplication.businessInfo?.serviceAreas || []).join(', ') || 'N/A'],
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex justify-between rounded-xl bg-zinc-50 px-4 py-2.5">
+                            <span className="text-zinc-500">{label}</span>
+                            <span className="font-semibold text-black capitalize">{value || 'N/A'}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedApplication.businessInfo?.description && (
+                        <div className="mt-3 rounded-xl bg-zinc-50 p-4">
+                          <p className="m-0 text-xs font-semibold text-zinc-500">Description</p>
+                          <p className="mt-1 text-sm text-zinc-700">{selectedApplication.businessInfo.description}</p>
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+
+                  {/* KYC Documents */}
+                  <Card className="p-5">
+                    <h3 className="mb-4 text-base font-semibold text-black">KYC Documents</h3>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {[
+                        { label: 'Aadhar Front', url: selectedApplication.documents?.aadharFront },
+                        { label: 'Aadhar Back', url: selectedApplication.documents?.aadharBack },
+                        { label: 'PAN Card', url: selectedApplication.documents?.panCard },
+                        { label: 'Self Photo', url: selectedApplication.documents?.selfPhoto },
+                      ].map((doc) => (
+                        <div key={doc.label} className="rounded-2xl border border-zinc-100 p-3">
+                          <p className="mb-2 text-xs font-semibold text-zinc-500">{doc.label}</p>
+                          {doc.url ? (
+                            <a href={doc.url} target="_blank" rel="noreferrer">
+                              <img
+                                src={doc.url}
+                                alt={doc.label}
+                                className="h-40 w-full rounded-xl object-cover hover:opacity-90"
+                              />
+                            </a>
+                          ) : (
+                            <div className="flex h-40 items-center justify-center rounded-xl bg-zinc-100 text-sm text-zinc-400">
+                              Not uploaded
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </>
+              ) : (
+                <Card className="p-10 text-center text-sm text-zinc-400">Application not found.</Card>
+              )}
+            </div>
+          )}
+
           {/* ── PROVIDERS TAB ── */}
           {activeTab === 'providers' && (
             <Card className="p-5">
@@ -532,6 +805,7 @@ const AdminDashborad = () => {
                   <thead>
                     <tr className="bg-[#f8ebe6] text-xs font-semibold uppercase tracking-wide text-zinc-500">
                       <th className="rounded-l-2xl p-3 pl-4">Provider</th>
+                      <th className="p-3">Category</th>
                       <th className="p-3">Business</th>
                       <th className="p-3">KYC Status</th>
                       <th className="p-3">Rating</th>
@@ -564,6 +838,9 @@ const AdminDashborad = () => {
                               </p>
                             </div>
                           </div>
+                        </td>
+                        <td className="p-3 text-zinc-600 font-semibold text-purple-600">
+                          {item.category?.name || 'N/A'}
                         </td>
                         <td className="p-3 text-zinc-600">{item.businessName || 'N/A'}</td>
                         <td className="p-3">
@@ -607,6 +884,15 @@ const AdminDashborad = () => {
                                 Reject
                               </Button>
                             )}
+
+                            {/* View verification documents */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedDocs(item)}
+                            >
+                              View Docs
+                            </Button>
 
                             {/* View provider bookings */}
                             <Button
@@ -925,6 +1211,69 @@ const AdminDashborad = () => {
               </div>
             </Card>
           )}
+
+          {/* ── LOCATIONS TAB ── */}
+          {activeTab === 'locations' && (
+            <Card className="p-5">
+              <SectionTitle title="Manage Locations" count={locations.length} loading={loading} />
+
+              {/* Locations Grid */}
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {locations.length === 0 && (
+                  <p className="col-span-3 text-center text-sm text-[var(--text-muted)]">No locations added yet.</p>
+                )}
+                {locations.map((item) => (
+                  <div
+                    key={item._id}
+                    className="flex flex-col justify-between gap-4 rounded-[24px] border border-[var(--border-color)] bg-[var(--bg-shell)] p-5 transition-all"
+                  >
+                    <div>
+                      <h4 className="m-0 text-lg font-bold text-[var(--text-main)]">{item.city}</h4>
+                      <p className="m-0 mt-1 text-sm text-[var(--text-muted)] font-semibold">{item.district || 'N/A'}, {item.state}</p>
+                      {item.pincodes && item.pincodes.length > 0 && (
+                        <div className="mt-3">
+                          <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1">Serviced Pincodes:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.pincodes.map((pinObj, pidx) => {
+                              const pinCode = pinObj.pincode || pinObj;
+                              const isPinActive = pinObj.isActive !== false; // default to true if it is just a string
+                              return (
+                                <button
+                                  key={pidx}
+                                  onClick={() => handleTogglePincodeStatus(item._id, pinCode)}
+                                  className={`rounded-lg px-2 py-0.5 text-xs font-mono border transition-all ${
+                                    isPinActive
+                                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
+                                      : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20 hover:bg-zinc-500/20 line-through'
+                                  }`}
+                                  title="Click to toggle pincode status"
+                                >
+                                  {pinCode}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[var(--border-color)] pt-3 mt-2">
+                      <button
+                        onClick={() => handleToggleLocationStatus(item._id)}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
+                          item.isActive
+                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                            : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                        }`}
+                        title="Click to toggle status"
+                      >
+                        {item.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </main>
       </div>
 
@@ -939,6 +1288,67 @@ const AdminDashborad = () => {
           uploadEndpoint={`${API_URL}/user/upload/image`}
           profileEndpoint={`${API_URL}/user/edit-profile`}
         />
+      )}
+
+      {/* Verification Documents Modal */}
+      {selectedDocs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-3xl rounded-[28px] bg-white p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <button
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+              onClick={() => setSelectedDocs(null)}
+              type="button"
+            >
+              <CloseOutlinedIcon fontSize="small" />
+            </button>
+            <h3 className="mb-2 text-xl font-bold text-black">Verification Documents</h3>
+            <p className="mb-4 text-sm text-zinc-500">
+              Provider: <b>{getUserName(selectedDocs)}</b> | Business: <b>{selectedDocs.businessName || 'N/A'}</b>
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
+                <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Self Photo</span>
+                {selectedDocs.selfPhoto ? (
+                  <img src={selectedDocs.selfPhoto} alt="Self Photo" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
+                )}
+              </div>
+
+              <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
+                <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">PAN Card</span>
+                {selectedDocs.panCard ? (
+                  <img src={selectedDocs.panCard} alt="PAN Card" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
+                )}
+              </div>
+
+              <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
+                <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Aadhar Card Front</span>
+                {selectedDocs.aadharFront ? (
+                  <img src={selectedDocs.aadharFront} alt="Aadhar Front" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
+                )}
+              </div>
+
+              <div className="border border-zinc-200 rounded-2xl p-4 bg-zinc-50 text-center flex flex-col items-center">
+                <span className="font-bold text-xs uppercase tracking-wider mb-2 text-zinc-500 block">Aadhar Card Back</span>
+                {selectedDocs.aadharBack ? (
+                  <img src={selectedDocs.aadharBack} alt="Aadhar Back" className="h-48 w-auto max-w-full object-contain rounded-xl shadow" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-zinc-400">No image uploaded</div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button onClick={() => setSelectedDocs(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

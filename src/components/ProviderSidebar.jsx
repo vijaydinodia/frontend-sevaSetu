@@ -1,30 +1,27 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
-import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
+import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined'
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined'
-import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined'
+import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import useTheme from '../custom_hook/UseTheme'
 
-const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendingCount }) => {
+const ProviderSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
 
   const menuItems = [
     { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
-    { key: 'applications', label: 'Applications', icon: <PendingActionsOutlinedIcon fontSize="small" />, badge: pendingCount },
-    { key: 'providers', label: 'Providers', icon: <WorkOutlineOutlinedIcon fontSize="small" /> },
     { key: 'bookings', label: 'Bookings', icon: <CalendarMonthOutlinedIcon fontSize="small" /> },
+    { key: 'services', label: 'My Services', icon: <EngineeringOutlinedIcon fontSize="small" /> },
     { key: 'reviews', label: 'Reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
-    { key: 'locations', label: 'Locations', icon: <LocationOnOutlinedIcon fontSize="small" /> },
+    { key: 'profile', label: 'Business Profile', icon: <WorkOutlineOutlinedIcon fontSize="small" /> },
   ]
 
   const handleLogout = () => {
@@ -51,8 +48,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
         }}
         className={`
           sidebar-col
-          flex flex-col bg-black text-white
-          border-r border-white/10
+          flex flex-col bg-zinc-950 text-white
+          border-r border-zinc-800
           transition-all duration-300
           fixed top-0 left-0 z-30
           md:relative md:z-auto md:translate-x-0
@@ -60,10 +57,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
         `}
       >
         {/* Logo + toggle */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 p-4">
           {!collapsed && (
             <Link to="/" className="flex items-center gap-3 overflow-hidden">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-sm font-bold text-white">
                 S
               </span>
               <h2 className="m-0 truncate text-base font-semibold tracking-tight">SevaSetu</h2>
@@ -71,14 +68,14 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
           )}
           {collapsed && (
             <Link to="/" className="mx-auto">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-sm font-bold text-white">
                 S
               </span>
             </Link>
           )}
           {/* toggle button - visible on desktop */}
           <button
-            className="ml-auto hidden shrink-0 items-center justify-center h-8 w-8 rounded-xl hover:bg-white/10 transition md:flex"
+            className="ml-auto hidden shrink-0 items-center justify-center h-8 w-8 rounded-xl hover:bg-zinc-800 transition md:flex"
             onClick={() => setCollapsed(!collapsed)}
             title="Toggle sidebar"
           >
@@ -92,9 +89,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
         {/* Role badge */}
         {!collapsed && (
           <div className="shrink-0 px-4 py-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-zinc-400">
-              <AdminPanelSettingsOutlinedIcon style={{ fontSize: 13 }} />
-              Admin Panel
+            <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 border border-amber-500/20">
+              <EngineeringOutlinedIcon style={{ fontSize: 13 }} />
+              Provider Portal
             </span>
           </div>
         )}
@@ -108,29 +105,25 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
           )}
           <div className="flex flex-col gap-1">
             {menuItems.map((item) => {
-              const isActive = activeTab === item.key || (activeTab === 'providerBookings' && item.key === 'providers') || (activeTab === 'applicationDetail' && item.key === 'applications')
+              const isActive = activeTab === item.key
               return (
                 <button
                   key={item.key}
                   className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-left transition-all duration-150 ${
                     isActive
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/15'
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                   } ${collapsed ? 'justify-center' : ''}`}
                   type="button"
                   onClick={() => {
                     setActiveTab(item.key)
+                    // close sidebar on mobile after click
                     if (window.innerWidth < 768) setCollapsed(true)
                   }}
                   title={collapsed ? item.label : ''}
                 >
-                  <span className={`shrink-0 ${isActive ? 'text-black' : ''}`}>{item.icon}</span>
+                  <span className="shrink-0">{item.icon}</span>
                   {!collapsed && <span className="truncate">{item.label}</span>}
-                  {!collapsed && item.badge > 0 && (
-                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               )
             })}
@@ -138,10 +131,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
         </nav>
 
         {/* Theme Toggle & Logout section */}
-        <div className="shrink-0 border-t border-white/10 p-3 flex flex-col gap-1">
+        <div className="shrink-0 border-t border-zinc-800 p-3 flex flex-col gap-1">
           {/* Theme Toggle */}
           <button
-            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-white/10 hover:text-white transition-all ${collapsed ? 'justify-center' : ''}`}
+            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all ${collapsed ? 'justify-center' : ''}`}
             onClick={toggleTheme}
             title={collapsed ? 'Toggle Theme' : `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
           >
@@ -168,7 +161,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
       {/* Mobile menu open button (shown when sidebar is closed) */}
       {collapsed && (
         <button
-          className="fixed top-4 left-4 z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-black text-white shadow-lg md:hidden"
+          className="fixed top-4 left-4 z-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg md:hidden"
           onClick={() => setCollapsed(false)}
         >
           <MenuOutlinedIcon fontSize="small" />
@@ -178,4 +171,4 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
   )
 }
 
-export default AdminSidebar
+export default ProviderSidebar

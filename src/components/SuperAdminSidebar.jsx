@@ -12,11 +12,15 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined'
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined'
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
+import useTheme from '../custom_hook/UseTheme'
 
 const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { theme, toggleTheme } = useTheme()
 
   const menuItems = [
     { key: 'dashboard', label: 'Dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
@@ -139,8 +143,23 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
           </div>
         </nav>
 
-        {/* Logout */}
-        <div className="shrink-0 border-t border-white/10 p-3">
+        {/* Theme Toggle & Logout section */}
+        <div className="shrink-0 border-t border-white/10 p-3 flex flex-col gap-1">
+          {/* Theme Toggle */}
+          <button
+            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-white/10 hover:text-white transition-all ${collapsed ? 'justify-center' : ''}`}
+            onClick={toggleTheme}
+            title={collapsed ? 'Toggle Theme' : `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          >
+            {theme === 'light' ? (
+              <DarkModeOutlinedIcon fontSize="small" />
+            ) : (
+              <LightModeOutlinedIcon fontSize="small" />
+            )}
+            {!collapsed && <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>}
+          </button>
+
+          {/* Logout */}
           <button
             className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-zinc-400 hover:bg-red-500/20 hover:text-red-400 transition-all ${collapsed ? 'justify-center' : ''}`}
             onClick={handleLogout}

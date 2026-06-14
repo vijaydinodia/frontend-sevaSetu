@@ -7,10 +7,10 @@ const buttonClass = cva(
   {
     variants: {
       variant: {
-        default: 'bg-black text-white hover:bg-zinc-800',
-        gradient: 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-lg shadow-pink-200',
-        outline: 'border border-zinc-200 bg-white text-black hover:bg-zinc-50',
-        ghost: 'bg-transparent text-black hover:bg-white/60',
+        default: 'bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200',
+        gradient: 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-lg dark:shadow-none',
+        outline: 'border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800',
+        ghost: 'bg-transparent text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800',
       },
       size: {
         default: 'h-11 px-5',

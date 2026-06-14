@@ -96,25 +96,25 @@ const SuperAdminEditProfile = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8ebe6] md:flex-row">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-shell)] md:flex-row transition-colors duration-200">
       <SuperAdminSidebar />
       <main className="flex-1 p-5 md:p-10">
         <Card className="mx-auto max-w-3xl p-7">
-          <h1 className="mb-6 text-4xl font-semibold text-black">Edit Profile</h1>
+          <h1 className="mb-6 text-4xl font-semibold text-[var(--text-main)]">Edit Profile</h1>
 
           <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
             <Input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First name" />
             <Input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last name" />
             <Input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" />
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-semibold text-zinc-700">Profile Image</label>
+              <label className="mb-2 block text-sm font-semibold text-[var(--text-muted)]">Profile Image</label>
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 {formData.profileImage && (
                   <img className="h-20 w-20 rounded-2xl object-cover" src={formData.profileImage} alt="profile" />
                 )}
                 <Input type="file" accept="image/*" onChange={handleImageUpload} />
               </div>
-              {uploading && <p className="mt-2 text-sm font-semibold text-zinc-600">Uploading image...</p>}
+              {uploading && <p className="mt-2 text-sm font-semibold text-[var(--text-muted)]">Uploading image...</p>}
             </div>
             <Input name="country" value={formData.country} onChange={handleChange} placeholder="Country" />
             <Input name="state" value={formData.state} onChange={handleChange} placeholder="State" />
@@ -127,7 +127,7 @@ const SuperAdminEditProfile = () => {
             </Button>
           </form>
 
-          {message && <p className="mt-5 text-center text-sm font-semibold text-zinc-700">{message}</p>}
+          {message && <p className="mt-5 text-center text-sm font-semibold text-[var(--text-muted)]">{message}</p>}
         </Card>
       </main>
     </div>
