@@ -21,6 +21,7 @@ import CookiePolicy from './components/CookiePolicy'
 import FAQ          from './components/FAQ'
 import CategoryProviders from './components/CategoryProviders'
 import ProviderDetails   from './components/ProviderDetails'
+import ServiceDetails    from './components/ServiceDetails'
 
 // Protected dashboards (have their own sidebars/headers — no shared Navbar)
 import UserDashborad      from './dashborads/UserDashborad'
@@ -67,6 +68,7 @@ const App = () => {
 
         <Route path="/category/:categoryId" element={<CategoryProviders />} />
         <Route path="/provider/:providerId" element={<ProviderDetails />} />
+        <Route path="/service/:serviceKey" element={<ServiceDetails />} />
 
         <Route 
           path="/user-dashboard"         

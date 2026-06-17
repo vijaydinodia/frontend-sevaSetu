@@ -524,13 +524,12 @@ const AdminDashborad = () => {
 
       {/* Main */}
       <div className="main-col flex flex-col">
-        {/* Top header */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-black/10 bg-[#f8ebe6] px-5 py-4">
-          <div className="hidden items-center gap-2 text-sm font-semibold text-zinc-500 md:flex">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border-custom bg-card-bg px-5 py-4 transition-colors duration-200">
+          <div className="hidden items-center gap-2 text-sm font-semibold text-text-muted md:flex">
             <AdminPanelSettingsOutlinedIcon fontSize="small" />
             <span>Admin</span>
-            <span className="text-zinc-300">/</span>
-            <span className="capitalize text-black">
+            <span className="text-text-muted opacity-50">/</span>
+            <span className="capitalize text-text-main">
               {activeTab === 'dashboard' ? 'Overview' : activeTab === 'providerBookings' ? 'Provider Bookings' : activeTab}
             </span>
           </div>

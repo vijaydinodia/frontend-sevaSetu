@@ -7,7 +7,7 @@ const PublicLayout = () => {
   const { theme } = useTheme()
 
   const bg = theme === 'light'
-    ? 'bg-[#f8ebe6] text-zinc-900'
+    ? 'bg-white text-zinc-900'
     : 'bg-zinc-950 text-zinc-100'
 
   return (

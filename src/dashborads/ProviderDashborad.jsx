@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
@@ -20,6 +20,14 @@ import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOu
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined'
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined'
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined'
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
+import MessageOutlinedIcon from '@mui/icons-material/MessageOutlined'
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined'
+import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import API_URL from '../api'
 import ProviderSidebar from '../components/ProviderSidebar'
 import Button from '../components/ui/Button'
@@ -33,34 +41,31 @@ import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined'
 import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
 
 const defaultServices = [
-  { name: "Hourly bookings", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Hourly+bookings", description: "Flexible hourly cleaning and housekeeping bookings.", category: "Cleaning & Housekeeping" },
-  { name: "Bathroom Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Bathroom+Cleaning", description: "Deep cleaning of bathroom floors, walls, and fixtures.", category: "Cleaning & Housekeeping" },
-  { name: "Fridge Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Fridge+Cleaning", description: "Thorough cleaning of refrigerator interior and exterior.", category: "Cleaning & Housekeeping" },
-  { name: "Packing or Unpacking", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Packing+or+Unpacking", description: "Assistance with packing or unpacking boxes and luggage.", category: "Cleaning & Housekeeping" },
-  { name: "Utensils", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Utensils", description: "Cleaning and organizing daily utensils and dishware.", category: "Cleaning & Housekeeping" },
-  { name: "Kitchen Prep", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Kitchen+Prep", description: "Chopping vegetables and preparing ingredients for cooking.", category: "Cleaning & Housekeeping" },
-  { name: "Dusting & Wiping", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Dusting+%26+Wiping", description: "Detailed dusting and wiping of all surfaces and furniture.", category: "Cleaning & Housekeeping" },
-  { name: "Sweeping & Mopping", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Sweeping+%26+Mopping", description: "Thorough sweeping and mopping of all floor areas.", category: "Cleaning & Housekeeping" },
-  { name: "Pre-Party Express Clean", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Pre-Party+Express+Clean", description: "Quick and efficient cleaning before guests arrive.", category: "Cleaning & Housekeeping" },
-  { name: "Complete Wardrobe Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Complete+Wardrobe+Cleaning", description: "Organizing and cleaning the inside of wardrobes.", category: "Cleaning & Housekeeping" },
-  { name: "After-Party Express Clean", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=After-Party+Express+Clean", description: "Post-party cleanup of living areas and kitchen.", category: "Cleaning & Housekeeping" },
-  { name: "Ironing & Folding", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Ironing+%26+Folding", description: "Ironing and neatly folding clothes.", category: "Cleaning & Housekeeping" },
-  { name: "Window Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Window+Cleaning", description: "Wiping and washing interior and exterior windows.", category: "Cleaning & Housekeeping" },
-  { name: "Laundry", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Laundry", description: "Washing, drying, and basic folding of daily clothes.", category: "Cleaning & Housekeeping" },
-  { name: "Kitchen Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Kitchen+Cleaning", description: "Deep cleaning of kitchen countertops, sinks, and floors.", category: "Cleaning & Housekeeping" },
-  { name: "Balcony Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Balcony+Cleaning", description: "Cleaning of balcony floors and railings.", category: "Cleaning & Housekeeping" },
-  { name: "Fan Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Fan+Cleaning", description: "Dusting and wiping down ceiling fans.", category: "Cleaning & Housekeeping" },
-  { name: "Kitchen Cabinet Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Kitchen+Cabinet+Cleaning", description: "Cleaning the interior and exterior of kitchen cabinets.", category: "Cleaning & Housekeeping" },
-  { name: "Plant Care", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Plant+Care", description: "Watering and basic pruning of indoor plants.", category: "Cleaning & Housekeeping" },
-  { name: "Car Surface Cleaning", image: "https://placehold.co/400x300/f8ebe6/a07c42?text=Car+Surface+Cleaning", description: "Exterior wipe down and basic interior cleaning of car.", category: "Cleaning & Housekeeping" },
+  { name: "Hourly bookings", image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80", description: "Flexible hourly cleaning and housekeeping bookings.", category: "Cleaning & Housekeeping" },
+  { name: "Bathroom Cleaning", image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80", description: "Deep cleaning of bathroom floors, walls, and fixtures.", category: "Cleaning & Housekeeping" },
+  { name: "Fridge Cleaning", image: "https://images.unsplash.com/photo-1571175432290-ef026cbe6822?auto=format&fit=crop&w=400&q=80", description: "Thorough cleaning of refrigerator interior and exterior.", category: "Cleaning & Housekeeping" },
+  { name: "Packing or Unpacking", image: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=400&q=80", description: "Assistance with packing or unpacking boxes and luggage.", category: "Cleaning & Housekeeping" },
+  { name: "Utensils", image: "https://images.unsplash.com/photo-1585007600263-71228e40c83e?auto=format&fit=crop&w=400&q=80", description: "Cleaning and organizing daily utensils and dishware.", category: "Cleaning & Housekeeping" },
+  { name: "Kitchen Prep", image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=400&q=80", description: "Chopping vegetables and preparing ingredients for cooking.", category: "Cleaning & Housekeeping" },
+  { name: "Dusting & Wiping", image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&w=400&q=80", description: "Detailed dusting and wiping of all surfaces and furniture.", category: "Cleaning & Housekeeping" },
+  { name: "Sweeping & Mopping", image: "https://images.unsplash.com/photo-1581578732697-5f850ecdd68a?auto=format&fit=crop&w=400&q=80", description: "Thorough sweeping and mopping of all floor areas.", category: "Cleaning & Housekeeping" },
+  { name: "Pre-Party Express Clean", image: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=400&q=80", description: "Quick and efficient cleaning before guests arrive.", category: "Cleaning & Housekeeping" },
+  { name: "Complete Wardrobe Cleaning", image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&w=400&q=80", description: "Organizing and cleaning the inside of wardrobes.", category: "Cleaning & Housekeeping" },
+  { name: "After-Party Express Clean", image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&q=80", description: "Post-party cleanup of living areas and kitchen.", category: "Cleaning & Housekeeping" },
+  { name: "Ironing & Folding", image: "https://images.unsplash.com/photo-1489008777659-ad1fc8e07097?auto=format&fit=crop&w=400&q=80", description: "Ironing and neatly folding clothes.", category: "Cleaning & Housekeeping" },
+  { name: "Window Cleaning", image: "https://images.unsplash.com/photo-1603712725038-e9334ae8f39f?auto=format&fit=crop&w=400&q=80", description: "Wiping and washing interior and exterior windows.", category: "Cleaning & Housekeeping" },
+  { name: "Laundry", image: "https://images.unsplash.com/photo-1545173168-9f19472ef7f4?auto=format&fit=crop&w=400&q=80", description: "Washing, drying, and basic folding of daily clothes.", category: "Cleaning & Housekeeping" },
+  { name: "Kitchen Cleaning", image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=400&q=80", description: "Deep cleaning of kitchen countertops, sinks, and floors.", category: "Cleaning & Housekeeping" },
+  { name: "Balcony Cleaning", image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=400&q=80", description: "Cleaning of balcony floors and railings.", category: "Cleaning & Housekeeping" },
+  { name: "Fan Cleaning", image: "https://images.unsplash.com/photo-1618944847828-82e943c3dba7?auto=format&fit=crop&w=400&q=80", description: "Dusting and wiping down ceiling fans.", category: "Cleaning & Housekeeping" },
+  { name: "Kitchen Cabinet Cleaning", image: "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=400&q=80", description: "Cleaning the interior and exterior of kitchen cabinets.", category: "Cleaning & Housekeeping" }
 ]
 
 const ProviderDashborad = () => {
   const navigate = useNavigate()
   const { theme } = useTheme()
-  const bookingsView = UseView('provider_bookings', 'card')
-  const servicesView = UseView('provider_services', 'card')
-  const reviewsView = UseView('provider_reviews', 'card')
+  
+  // States
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -68,8 +73,60 @@ const ProviderDashborad = () => {
   const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef(null)
   
+  // Online / Availability State (Synced with sidebar)
+  const [isOnline, setIsOnline] = useState(() => {
+    return localStorage.getItem('provider_online') !== 'false'
+  })
+
+  useEffect(() => {
+    const handleStatusChange = () => {
+      setIsOnline(localStorage.getItem('provider_online') !== 'false')
+    }
+    window.addEventListener('provider_online_change', handleStatusChange)
+    return () => window.removeEventListener('provider_online_change', handleStatusChange)
+  }, [])
+
+  const toggleOnlineStatus = () => {
+    const nextState = !isOnline
+    setIsOnline(nextState)
+    localStorage.setItem('provider_online', String(nextState))
+    window.dispatchEvent(new Event('provider_online_change'))
+  }
+
   // OTP Modal state
   const [otpModal, setOtpModal] = useState({ show: false, bookingId: null, targetStatus: '', otp: '' })
+
+  // Drawer details panel state
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState(null)
+
+  // Invoice Simulator state
+  const [invoiceModal, setInvoiceModal] = useState({ show: false, bookingNumber: '', customerName: '', serviceName: '', amount: 0, tax: 0, total: 0 })
+
+  // Calendar tab states
+  const [calendarDate, setCalendarDate] = useState(new Date())
+
+  // Chats Tab Simulator states
+  const [messagesList, setMessagesList] = useState([
+    { id: 1, sender: "Aarav Sharma", text: "Hello, are you on the way for the kitchen cleaning?", time: "09:15 AM", unread: true },
+    { id: 2, sender: "Sneha Patel", text: "Thank you for the laundry service! It was perfect.", time: "Yesterday", unread: false },
+    { id: 3, sender: "Rohan Verma", text: "Can we reschedule the bathroom cleaning to 3 PM?", time: "2 days ago", unread: false }
+  ])
+  const [selectedChat, setSelectedChat] = useState(1)
+  const [replyText, setReplyText] = useState('')
+  const [chatHistories, setChatHistories] = useState({
+    1: [
+      { sender: "customer", text: "Hello, are you on the way for the kitchen cleaning?", time: "09:15 AM" }
+    ],
+    2: [
+      { sender: "customer", text: "Hi, just wanted to check if you do delicate fabrics too?", time: "Yesterday" },
+      { sender: "provider", text: "Yes, we handle delicate garments with special care.", time: "Yesterday" },
+      { sender: "customer", text: "Thank you for the laundry service! It was perfect.", time: "Yesterday" }
+    ],
+    3: [
+      { sender: "customer", text: "Can we reschedule the bathroom cleaning to 3 PM?", time: "2 days ago" }
+    ]
+  })
 
   // Service management states
   const [myServices, setMyServices] = useState([])
@@ -86,24 +143,11 @@ const ProviderDashborad = () => {
 
   // Form state for profile updating
   const [profileForm, setProfileForm] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    profileImage: '',
-    fullAddress: '',
-    city: '',
-    state: '',
-    country: '',
-    pincode: '',
-    businessName: '',
-    experience: '',
-    skills: '',
-    serviceAreas: '',
-    description: '',
-    category: '',
+    firstName: '', lastName: '', phone: '', profileImage: '',
+    fullAddress: '', city: '', state: '', country: '', pincode: '',
+    businessName: '', experience: '', skills: '', serviceAreas: '', description: '', category: '',
   })
 
-  // Check auth token
   const token = localStorage.getItem('token')
   useEffect(() => {
     if (!token) {
@@ -111,7 +155,7 @@ const ProviderDashborad = () => {
     }
   }, [token, navigate])
 
-  // Datamuse API for related service titles
+  // Datamuse API suggestions logic
   useEffect(() => {
     const fetchSuggestions = async () => {
       const q = customServiceName.trim()
@@ -133,7 +177,6 @@ const ProviderDashborad = () => {
         setIsFetchingServiceNames(false)
       }
     }
-
     const debounceTimer = setTimeout(fetchSuggestions, 600)
     return () => clearTimeout(debounceTimer)
   }, [customServiceName])
@@ -142,51 +185,32 @@ const ProviderDashborad = () => {
     headers: { Authorization: `Bearer ${token}` },
   })
 
-  // Bookings Tab Filters, Search and Sort States
-  const [bookingFilter, setBookingFilter] = useState('all')
+  // Bookings Tab Filters & Search States
+  const [bookingFilter, setBookingFilter] = useState('all') // 'all', 'Today', 'This Week', 'This Month'
   const [bookingSearch, setBookingSearch] = useState('')
-  const [bookingSort, setBookingSort] = useState('dateNewest')
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('all') // 'all', 'pending', 'active', 'completed'
 
-  // Services Tab Search and Sort States
+  // Services Tab Search & Sort States
   const [serviceSearch, setServiceSearch] = useState('')
   const [serviceSort, setServiceSort] = useState('nameAsc')
 
-  // Reviews Tab Search and Sort States
+  // Reviews Tab Search & Sort States
   const [reviewSearch, setReviewSearch] = useState('')
   const [reviewSort, setReviewSort] = useState('dateNewest')
 
-  // Fetch using custom hooks
-  const {
-    data: profileData,
-    loading: profileLoading,
-    refetch: refetchProfile,
-  } = UseFetch(`${API_URL}/provider/profile`, { autoFetch: !!token })
+  // Fetch Hooks
+  const { data: profileData, loading: profileLoading, refetch: refetchProfile } = UseFetch(`${API_URL}/provider/profile`, { autoFetch: !!token })
+  const { data: bookingsData, loading: bookingsLoading, refetch: refetchBookings } = UseFetch(`${API_URL}/provider/bookings`, { autoFetch: !!token })
+  const { data: reviewsData, loading: reviewsLoading, refetch: refetchReviews } = UseFetch(`${API_URL}/provider/reviews`, { autoFetch: !!token })
+  const { data: categoriesData, loading: categoriesLoading } = UseFetch(`${API_URL}/provider/categories`, { autoFetch: !!token })
 
-  const {
-    data: bookingsData,
-    loading: bookingsLoading,
-    refetch: refetchBookings,
-  } = UseFetch(`${API_URL}/provider/bookings`, { autoFetch: !!token })
-
-  const {
-    data: reviewsData,
-    loading: reviewsLoading,
-    refetch: refetchReviews,
-  } = UseFetch(`${API_URL}/provider/reviews`, { autoFetch: !!token })
-
-  const {
-    data: categoriesData,
-    loading: categoriesLoading,
-  } = UseFetch(`${API_URL}/provider/categories`, { autoFetch: !!token })
-
-  // Destructure database items
   const provider = profileData?.data
   const userDetails = provider?.user
   const bookings = bookingsData?.data || []
   const reviews = reviewsData?.data || []
   const categories = categoriesData?.data || []
 
-  // Initialize profile update form when data is loaded
+  // Sync profile details form
   useEffect(() => {
     if (provider && userDetails) {
       setProfileForm({
@@ -229,11 +253,12 @@ const ProviderDashborad = () => {
   }
 
   useEffect(() => {
-    if (activeTab === 'services') {
+    if (activeTab === 'services' || activeTab === 'dashboard') {
       fetchProviderServices()
     }
   }, [activeTab])
 
+  // Handlers
   const handleAddServiceSubmit = async (e) => {
     e.preventDefault()
     if (!customServiceName || !customServiceDesc || !customServiceCategory || !customPrice) return
@@ -245,13 +270,8 @@ const ProviderDashborad = () => {
         category: customServiceCategory,
         price: Number(customPrice),
         image: customServiceImage,
-      };
-
-      const res = await axios.post(
-        `${API_URL}/provider/services/add`,
-        payload,
-        getHeaders()
-      )
+      }
+      const res = await axios.post(`${API_URL}/provider/services/add`, payload, getHeaders())
       showNotification(res.data.message || 'Service added successfully!')
       setCustomPrice('')
       setCustomServiceName('')
@@ -267,13 +287,10 @@ const ProviderDashborad = () => {
   }
 
   const handleRemoveService = async (providerServiceId) => {
-    if (!window.confirm("Are you sure you want to remove this service from your offerings?")) return
+    if (!window.confirm("Are you sure you want to remove this service?")) return
     setActionLoading(true)
     try {
-      const res = await axios.delete(
-        `${API_URL}/provider/services/remove/${providerServiceId}`,
-        getHeaders()
-      )
+      const res = await axios.delete(`${API_URL}/provider/services/remove/${providerServiceId}`, getHeaders())
       showNotification(res.data.message || 'Service removed successfully')
       fetchProviderServices()
     } catch (err) {
@@ -283,27 +300,26 @@ const ProviderDashborad = () => {
     }
   }
 
-  // Handle booking status updates
   const handleUpdateStatus = async (bookingId, newStatus, providedOtp = '') => {
     if ((newStatus === 'started' || newStatus === 'completed') && !providedOtp) {
       setOtpModal({ show: true, bookingId, targetStatus: newStatus, otp: '' })
       return
     }
-
     setActionLoading(true)
     try {
       const payload = { status: newStatus }
       if (providedOtp) payload.otp = providedOtp
-
-      const res = await axios.put(
-        `${API_URL}/provider/bookings/${bookingId}/status`,
-        payload,
-        getHeaders()
-      )
+      const res = await axios.put(`${API_URL}/provider/bookings/${bookingId}/status`, payload, getHeaders())
       showNotification(res.data.message || `Booking status updated to ${newStatus}`)
-      if (otpModal.show) setOtpModal({ show: false, bookingId: null, targetStatus: '', otp: '' })
+      
+      // Update drawer state if open
+      if (selectedBooking && selectedBooking._id === bookingId) {
+        setSelectedBooking(prev => ({ ...prev, status: newStatus }))
+      }
+
+      setOtpModal({ show: false, bookingId: null, targetStatus: '', otp: '' })
       refetchBookings()
-      refetchProfile() // refetch for totalEarnings / totalBookings update
+      refetchProfile()
     } catch (err) {
       showNotification(err.response?.data?.message || err.message)
     } finally {
@@ -311,24 +327,18 @@ const ProviderDashborad = () => {
     }
   }
 
-  // Upload image to cloudinary endpoint
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-
     setUploadingImage(true)
     try {
       const imageData = new FormData()
       imageData.append('image', file)
-
       const res = await axios.post(`${API_URL}/user/upload/image`, imageData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
       })
-      setProfileForm((prev) => ({ ...prev, profileImage: res.data.data.url }))
-      showNotification('Image uploaded successfully! Save changes to persist.')
+      setProfileForm(prev => ({ ...prev, profileImage: res.data.data.url }))
+      showNotification('Photo uploaded successfully! Save settings to persist.')
     } catch (err) {
       showNotification(err.response?.data?.message || err.message)
     } finally {
@@ -336,37 +346,30 @@ const ProviderDashborad = () => {
     }
   }
 
-  // Submit profile edit form
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
     setActionLoading(true)
     try {
-      const res = await axios.put(
-        `${API_URL}/provider/profile/edit`,
-        {
-          firstName: profileForm.firstName,
-          lastName: profileForm.lastName,
-          phone: profileForm.phone,
-          profileImage: profileForm.profileImage,
-          address: {
-            fullAddress: profileForm.fullAddress,
-            city: profileForm.city,
-            state: profileForm.state,
-            country: profileForm.country,
-            pincode: profileForm.pincode,
-          },
-          businessName: profileForm.businessName,
-          category: profileForm.category,
-          experience: profileForm.experience,
-          skills: profileForm.skills,
-          serviceAreas: profileForm.serviceAreas,
-          description: profileForm.description,
+      const res = await axios.put(`${API_URL}/provider/profile/edit`, {
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        phone: profileForm.phone,
+        profileImage: profileForm.profileImage,
+        address: {
+          fullAddress: profileForm.fullAddress,
+          city: profileForm.city,
+          state: profileForm.state,
+          country: profileForm.country,
+          pincode: profileForm.pincode,
         },
-        getHeaders()
-      )
-      showNotification(res.data.message || 'Profile updated successfully')
-      
-      // Update local storage user entry too
+        businessName: profileForm.businessName,
+        category: profileForm.category,
+        experience: profileForm.experience,
+        skills: profileForm.skills,
+        serviceAreas: profileForm.serviceAreas,
+        description: profileForm.description,
+      }, getHeaders())
+      showNotification(res.data.message || 'Settings saved successfully')
       if (res.data.data?.user) {
         localStorage.setItem('user', JSON.stringify(res.data.data.user))
       }
@@ -378,1443 +381,1552 @@ const ProviderDashborad = () => {
     }
   }
 
-  const filteredBookings = bookings
-    .filter((b) => {
-      // 1. Status Filter
-      if (bookingFilter !== 'all') {
-        if (bookingFilter === 'pending' && b.status !== 'pending') return false
-        if (bookingFilter === 'active' && !['accepted', 'on_the_way', 'started'].includes(b.status)) return false
-        if (bookingFilter === 'completed' && b.status !== 'completed') return false
-      }
-      
-      // 2. Search Text Filter
+  // Filter Bookings by Search query and Date range filter
+  const getFilteredBookings = (list) => {
+    return list.filter(b => {
+      // 1. Search Query
       const q = bookingSearch.toLowerCase().trim()
       if (q) {
-        const bNo = b.bookingNumber?.toString() || ''
-        const sTitle = b.service?.title || b.service?.serviceName || ''
-        const cName = b.customer ? `${b.customer.firstName} ${b.customer.lastName}`.toLowerCase() : ''
-        if (!bNo.includes(q) && !sTitle.toLowerCase().includes(q) && !cName.includes(q)) {
-          return false
-        }
+        const bNum = b.bookingNumber?.toString() || ''
+        const custName = `${b.customer?.firstName || ''} ${b.customer?.lastName || ''}`.toLowerCase()
+        const sName = (b.service?.serviceName || b.service?.title || '').toLowerCase()
+        if (!bNum.includes(q) && !custName.includes(q) && !sName.includes(q)) return false
       }
+
+      // 2. Date Filter
+      const bDate = new Date(b.bookingDate)
+      const today = new Date()
+      if (bookingFilter === 'Today') {
+        if (bDate.toDateString() !== today.toDateString()) return false
+      } else if (bookingFilter === 'This Week') {
+        const diff = today.getTime() - bDate.getTime()
+        const days = diff / (1000 * 3600 * 24)
+        if (days > 7 || days < -7) return false
+      } else if (bookingFilter === 'This Month') {
+        if (bDate.getMonth() !== today.getMonth() || bDate.getFullYear() !== today.getFullYear()) return false
+      }
+
+      // 3. Status tab filter
+      if (bookingStatusFilter !== 'all') {
+        if (bookingStatusFilter === 'pending' && b.status !== 'pending') return false
+        if (bookingStatusFilter === 'active' && !['accepted', 'on_the_way', 'started'].includes(b.status)) return false
+        if (bookingStatusFilter === 'completed' && b.status !== 'completed') return false
+      }
+
       return true
     })
-    .sort((a, b) => {
-      if (bookingSort === 'dateNewest') return new Date(b.bookingDate) - new Date(a.bookingDate)
-      if (bookingSort === 'dateOldest') return new Date(a.bookingDate) - new Date(b.bookingDate)
-      if (bookingSort === 'amountHigh') return b.amount - a.amount
-      if (bookingSort === 'amountLow') return a.amount - b.amount
-      return 0
+  }
+
+  // Statistics computed directly from database data
+  const totalBookingsCount = bookings.length
+  const todayBookingsCount = bookings.filter(b => new Date(b.bookingDate).toDateString() === new Date().toDateString()).length
+  const customersCount = new Set(bookings.map(b => b.customer?._id).filter(Boolean)).size
+  const earningsSum = bookings.filter(b => b.status === 'completed').reduce((acc, b) => acc + (b.amount || 0), 0)
+  const ratingScore = provider?.averageRating || '0.0'
+
+  // Helper to generate dynamic 6-month chart data
+  const getChartData = () => {
+    const months = []
+    const now = new Date()
+    // Generate last 6 months list
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({
+        name: d.toLocaleString('default', { month: 'short' }),
+        year: d.getFullYear(),
+        monthIndex: d.getMonth(),
+        revenue: 0,
+        bookingsCount: 0
+      })
+    }
+
+    // Accumulate actual booking data
+    bookings.forEach(b => {
+      const bDate = new Date(b.bookingDate)
+      months.forEach(m => {
+        if (bDate.getFullYear() === m.year && bDate.getMonth() === m.monthIndex) {
+          m.bookingsCount++
+          if (b.status === 'completed') {
+            m.revenue += (b.amount || 0)
+          }
+        }
+      })
     })
 
-  const filteredAndSortedServices = myServices
-    .filter((ps) => {
-      const q = serviceSearch.toLowerCase().trim()
-      if (!q) return true
-      const sName = ps.service?.serviceName?.toLowerCase() || ''
-      const sDesc = ps.service?.description?.toLowerCase() || ''
-      const sCat = ps.service?.category?.name?.toLowerCase() || ''
-      return sName.includes(q) || sDesc.includes(q) || sCat.includes(q)
-    })
-    .sort((a, b) => {
-      if (serviceSort === 'priceLow') return a.price - b.price
-      if (serviceSort === 'priceHigh') return b.price - a.price
-      if (serviceSort === 'nameAsc') return (a.service?.serviceName || '').localeCompare(b.service?.serviceName || '')
-      if (serviceSort === 'nameDesc') return (b.service?.serviceName || '').localeCompare(a.service?.serviceName || '')
-      return 0
+    // Find maximums for scaling (avoid division by 0)
+    const maxRev = Math.max(...months.map(m => m.revenue), 1000)
+    const maxBook = Math.max(...months.map(m => m.bookingsCount), 5)
+
+    // Compute coordinates
+    const points = months.map((m, idx) => {
+      const x = 45 + idx * 80
+      const yRev = 170 - (m.revenue / maxRev) * 140 // scale to height 140 (leaves 30px padding at top)
+      const yBook = 170 - (m.bookingsCount / maxBook) * 140
+      return { x, yRev, yBook, monthName: m.name }
     })
 
-  const filteredAndSortedReviews = reviews
-    .filter((r) => {
-      const q = reviewSearch.toLowerCase().trim()
-      if (!q) return true
-      const cName = r.customer ? `${r.customer.firstName} ${r.customer.lastName}`.toLowerCase() : ''
-      const reviewText = r.review?.toLowerCase() || ''
-      const ratingStr = r.rating?.toString() || ''
-      return cName.includes(q) || reviewText.includes(q) || ratingStr === q
+    // Generate SVG path string for Revenue Line
+    const revPath = points.length > 0 
+      ? `M ${points[0].x} ${points[0].yRev} ` + points.slice(1).map(p => `L ${p.x} ${p.yRev}`).join(' ') 
+      : ''
+    
+    // Generate SVG path string for Revenue Fill Area
+    const revFillPath = points.length > 0 
+      ? `M ${points[0].x} 170 L ` + points.map(p => `${p.x} ${p.yRev}`).join(' L ') + ` L ${points[points.length-1].x} 170 Z`
+      : ''
+
+    // Generate SVG path string for Bookings Line
+    const bookPath = points.length > 0 
+      ? `M ${points[0].x} ${points[0].yBook} ` + points.slice(1).map(p => `L ${p.x} ${p.yBook}`).join(' ') 
+      : ''
+
+    return { points, revPath, revFillPath, bookPath, months }
+  }
+
+  const chartData = getChartData()
+
+  // Helper to generate dynamic notifications from database bookings
+  const getDynamicNotifications = () => {
+    const alerts = []
+    
+    // Sort bookings by creation date or just date to get recent updates
+    const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt || b.bookingDate) - new Date(a.createdAt || a.bookingDate))
+    
+    sortedBookings.slice(0, 5).forEach(b => {
+      const custName = b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Guest User'
+      const servName = capitalizeWords(b.service?.serviceName || b.service?.title || 'service')
+      const timeStr = new Date(b.createdAt || b.bookingDate).toLocaleDateString()
+      
+      if (b.status === 'pending') {
+        alerts.push({
+          text: `New service booking request received from ${custName} for ${servName}.`,
+          time: `Slot: ${b.bookingTime}`,
+          type: 'new'
+        })
+      } else if (b.status === 'completed') {
+        alerts.push({
+          text: `Service request for ${servName} completed successfully for ${custName}.`,
+          time: `Date: ${timeStr}, Amount: ₹${b.amount}`,
+          type: 'payment'
+        })
+      } else if (b.status === 'cancelled') {
+        alerts.push({
+          text: `Service request for ${servName} was cancelled.`,
+          time: `Slot: ${b.bookingTime}`,
+          type: 'reschedule'
+        })
+      } else {
+        alerts.push({
+          text: `Booking request for ${servName} is in progress (${b.status?.replace(/_/g, ' ')}).`,
+          time: `Slot: ${b.bookingTime}`,
+          type: 'reschedule'
+        })
+      }
     })
-    .sort((a, b) => {
-      if (reviewSort === 'dateNewest') return new Date(b.createdAt) - new Date(a.createdAt)
-      if (reviewSort === 'dateOldest') return new Date(a.createdAt) - new Date(b.createdAt)
-      if (reviewSort === 'ratingHigh') return b.rating - a.rating
-      if (reviewSort === 'ratingLow') return a.rating - b.rating
-      return 0
+    
+    // Fallback notice
+    alerts.push({
+      text: "Congratulations! Your partner account is active and verified on SevaSetu.",
+      time: "Welcome Alert",
+      type: "kyc"
+    })
+    
+    return alerts
+  }
+
+  const dynamicAlerts = getDynamicNotifications()
+
+  // Styles based on theme
+  const bgMain = theme === 'light' ? 'bg-[#FFFFFF] text-[#111827]' : 'bg-zinc-950 text-zinc-100'
+  const textMuted = theme === 'light' ? 'text-[#6B7280]' : 'text-zinc-400'
+  const cardTheme = theme === 'light' ? 'bg-white border-[#E5E7EB]' : 'bg-zinc-900 border-zinc-800'
+  const borderCol = theme === 'light' ? 'border-[#E5E7EB]' : 'border-zinc-850'
+  const inputBg = theme === 'light' ? 'bg-white text-zinc-900 border-zinc-200' : 'bg-zinc-900 text-zinc-100 border-zinc-850'
+
+  // Trigger Booking Detail Drawer
+  const openBookingDetails = (b) => {
+    setSelectedBooking(b)
+    setDrawerOpen(true)
+  }
+
+  // Message chat sender handler
+  const sendChatMessage = (e) => {
+    e.preventDefault()
+    if (!replyText.trim()) return
+    const newMsg = { sender: "provider", text: replyText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    setChatHistories(prev => ({
+      ...prev,
+      [selectedChat]: [...(prev[selectedChat] || []), newMsg]
+    }))
+    // update messagesList preview
+    setMessagesList(prev => prev.map(m => m.id === selectedChat ? { ...m, text: replyText, time: "Just now", unread: false } : m))
+    setReplyText('')
+  }
+
+  // Invoice creator generator
+  const triggerInvoiceModal = (b) => {
+    const custName = b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Guest Customer'
+    const sName = b.service?.serviceName || b.service?.title || 'Home Service'
+    const baseAmt = b.amount || 1500
+    const calculatedTax = Math.round(baseAmt * 0.18)
+    const finalTotal = baseAmt + calculatedTax
+    setInvoiceModal({
+      show: true,
+      bookingNumber: b.bookingNumber || 'B-MOCK',
+      customerName: custName,
+      serviceName: sName,
+      amount: baseAmt,
+      tax: calculatedTax,
+      total: finalTotal
+    })
+  }
+
+  // Calendar logic helpers
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const days = new Date(year, month + 1, 0).getDate()
+    return Array.from({ length: days }, (_, i) => new Date(year, month, i + 1))
+  }
+
+  // RENDER SECTIONS
+  const renderDashboardTab = () => {
+    const filteredDashBookings = getFilteredBookings(bookings).slice(0, 10)
+    
+    return (
+      <div className="space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Today's Bookings", val: todayBookingsCount, change: "+2 from yesterday", icon: <CalendarMonthOutlinedIcon className="text-[#16A34A]" /> },
+            { label: "Total Customers", val: customersCount, change: "Active this month", icon: <PersonOutlineOutlinedIcon className="text-[#16A34A]" /> },
+            { label: "Monthly Earnings", val: `₹${earningsSum.toLocaleString()}`, change: "Updated live", icon: <CurrencyRupeeOutlinedIcon className="text-[#16A34A]" /> },
+            { label: "Average Rating", val: `${ratingScore}★`, change: `${reviews.length} total reviews`, icon: <StarRateOutlinedIcon className="text-amber-500" /> }
+          ].map((stat, idx) => (
+            <Card key={idx} className={`p-4 border ${cardTheme} rounded-[16px] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex items-center justify-between`}>
+              <div>
+                <p className={`text-xs font-semibold ${textMuted}`}>{stat.label}</p>
+                <h3 className="text-2xl font-black mt-1 text-zinc-900 dark:text-white">{stat.val}</h3>
+                <span className="text-[10px] text-zinc-400 font-medium">{stat.change}</span>
+              </div>
+              <div className="h-10 w-10 bg-green-50 dark:bg-green-950/20 rounded-xl flex items-center justify-center shrink-0">
+                {stat.icon}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Dynamic Inner Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Main left content pane */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Recent Bookings Table */}
+            <Card className={`p-5 border ${cardTheme} rounded-[16px] shadow-sm`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">Recent Bookings</h3>
+                  <p className="text-xs text-zinc-400">Review status and confirm client booking slots</p>
+                </div>
+                
+                {/* Search & date filter inside dashboard card */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search bookings..."
+                      value={bookingSearch}
+                      onChange={(e) => setBookingSearch(e.target.value)}
+                      className={`pl-8 pr-3 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-1 focus:ring-[#16A34A] w-[160px] sm:w-[200px] ${inputBg}`}
+                    />
+                    <SearchOutlinedIcon className="absolute left-2.5 top-2 text-zinc-400" style={{ fontSize: 14 }} />
+                  </div>
+                  
+                  <select
+                    value={bookingFilter}
+                    onChange={(e) => setBookingFilter(e.target.value)}
+                    className={`rounded-lg border px-2 py-1.5 text-xs focus:outline-none ${inputBg}`}
+                  >
+                    <option value="all">All Dates</option>
+                    <option value="Today">Today</option>
+                    <option value="This Week">This Week</option>
+                    <option value="This Month">This Month</option>
+                  </select>
+                </div>
+              </div>
+
+              {bookings.length === 0 ? (
+                <div className={`text-center py-12 ${textMuted} text-sm`}>No bookings assigned.</div>
+              ) : filteredDashBookings.length === 0 ? (
+                <div className={`text-center py-12 ${textMuted} text-sm`}>No matching results found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse min-w-[700px]">
+                    <thead>
+                      <tr className={`border-b ${borderCol} ${theme === 'light' ? 'bg-zinc-50/50' : 'bg-zinc-900/30'} text-zinc-500 font-semibold`}>
+                        <th className="py-2.5 px-3">Booking ID</th>
+                        <th className="py-2.5 px-3">Customer</th>
+                        <th className="py-2.5 px-3">Service</th>
+                        <th className="py-2.5 px-3">Schedule</th>
+                        <th className="py-2.5 px-3">Amount</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDashBookings.map((b) => (
+                        <tr key={b._id} className={`border-b ${borderCol} hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 transition-colors`}>
+                          <td className="py-3 px-3 font-mono font-bold text-zinc-500">{b.bookingNumber}</td>
+                          <td className="py-3 px-3">
+                            <span className="font-semibold block">{b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Guest'}</span>
+                            <span className="text-[10px] text-zinc-400">{b.customer?.phone || 'No phone'}</span>
+                          </td>
+                          <td className="py-3 px-3 font-medium">
+                            {capitalizeWords(b.service?.serviceName || b.service?.title)}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="block font-medium">{new Date(b.bookingDate).toLocaleDateString()}</span>
+                            <span className="text-[10px] text-zinc-400">{b.bookingTime}</span>
+                          </td>
+                          <td className="py-3 px-3 font-bold text-[#16A34A]">₹{b.amount}</td>
+                          <td className="py-3 px-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              b.status === 'completed'
+                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                                : b.status === 'pending'
+                                ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
+                                : b.status === 'rejected' || b.status === 'cancelled'
+                                ? 'bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400'
+                                : 'bg-blue-100 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400'
+                            }`}>
+                              {capitalize(b.status.replace(/_/g, ' '))}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => openBookingDetails(b)}
+                              className="text-xs font-bold text-[#16A34A] hover:text-[#15803D] hover:underline cursor-pointer"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+
+            {/* Upcoming Bookings cards */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-zinc-400">Upcoming Requests</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                {bookings.filter(b => b.status === 'pending').slice(0, 2).map((b) => (
+                  <Card key={b._id} className={`p-4 border ${cardTheme} rounded-[16px] flex flex-col justify-between hover:shadow-md transition-shadow`}>
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 bg-[#16A34A]/10 text-[#16A34A] flex items-center justify-center font-bold rounded-xl text-sm shrink-0">
+                        {b.customer?.firstName?.charAt(0).toUpperCase() || 'C'}
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-bold text-xs text-zinc-900 dark:text-white truncate">
+                          {b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Customer'}
+                        </h5>
+                        <p className="text-[10px] text-[#16A34A] font-bold truncate mt-0.5">
+                          {capitalizeWords(b.service?.serviceName || b.service?.title)}
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-1">
+                          {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                      <button
+                        onClick={() => handleUpdateStatus(b._id, 'accepted')}
+                        className="flex-1 py-1.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-[10px] font-bold rounded-lg cursor-pointer text-center"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus(b._id, 'rejected')}
+                        className="flex-1 py-1.5 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-350 text-[10px] font-bold rounded-lg cursor-pointer text-center"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </Card>
+                ))}
+                {bookings.filter(b => b.status === 'pending').length === 0 && (
+                  <div className={`col-span-2 text-center p-4 border border-dashed ${borderCol} rounded-[16px] text-xs ${textMuted}`}>
+                    No new pending booking requests.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Earnings Line Chart SVG widget */}
+            <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">Earnings Overview</h3>
+                  <p className="text-xs text-zinc-400">6-Month revenue & booking chart</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-semibold">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#16A34A] rounded-full" /> Revenue (₹)</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-indigo-500 rounded-full" /> Bookings</span>
+                </div>
+              </div>
+              
+              <div className="relative pt-4 w-full">
+                {/* SVG Graph */}
+                <svg viewBox="0 0 500 200" className="w-full h-44 overflow-visible">
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#16A34A" stopOpacity="0.15" />
+                      <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Grid Lines */}
+                  <line x1="30" y1="20" x2="480" y2="20" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
+                  <line x1="30" y1="70" x2="480" y2="70" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
+                  <line x1="30" y1="120" x2="480" y2="120" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
+                  <line x1="30" y1="170" x2="480" y2="170" stroke="#E5E7EB" strokeWidth="0.5" className="dark:stroke-zinc-800" />
+                  
+                  {/* Revenue Curve */}
+                  {chartData.revFillPath && (
+                    <path
+                      d={chartData.revFillPath}
+                      fill="url(#chartGrad)"
+                    />
+                  )}
+                  {chartData.revPath && (
+                    <path
+                      d={chartData.revPath}
+                      stroke="#16A34A"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  )}
+                  
+                  {/* Booking Curve */}
+                  {chartData.bookPath && (
+                    <path
+                      d={chartData.bookPath}
+                      stroke="#6366F1"
+                      strokeWidth="2.5"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray="1"
+                    />
+                  )}
+
+                  {/* Dynamic Data Dots */}
+                  {chartData.points.map((p, idx) => (
+                    <g key={idx}>
+                      <circle cx={p.x} cy={p.yRev} r="4" fill="#16A34A" />
+                      <circle cx={p.x} cy={p.yBook} r="4" fill="#6366F1" />
+                    </g>
+                  ))}
+                  
+                  {/* X Labels */}
+                  {chartData.points.map((p, idx) => (
+                    <text key={idx} x={p.x} y="190" textAnchor="middle" fontSize="10" fill="#9CA3AF">{p.monthName}</text>
+                  ))}
+                </svg>
+              </div>
+            </Card>
+
+            {/* Quick Actions Grid */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-zinc-400">Quick Actions</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {[
+                  { label: "Create Service", icon: <EngineeringOutlinedIcon className="text-[#16A34A] text-lg" />, act: () => setActiveTab('services') },
+                  { label: "Update Availability", icon: <EventAvailableOutlinedIcon className="text-[#16A34A] text-lg" />, act: toggleOnlineStatus },
+                  { label: "View Calendar", icon: <CalendarMonthOutlinedIcon className="text-[#16A34A] text-lg" />, act: () => setActiveTab('calendar') },
+                  { label: "Manage Profile", icon: <PersonOutlineOutlinedIcon className="text-[#16A34A] text-lg" />, act: () => setActiveTab('profile') },
+                  { label: "Create Invoice", icon: <DescriptionOutlinedIcon className="text-[#16A34A] text-lg" />, act: () => setInvoiceModal({ show: true, bookingNumber: 'B-QUICK', customerName: 'Client Partner', serviceName: 'General Maintenance', amount: 2500, tax: 450, total: 2950 }) }
+                ].map((action, idx) => (
+                  <button
+                    key={idx}
+                    onClick={action.act}
+                    className={`p-3.5 border ${cardTheme} rounded-xl hover:-translate-y-1 hover:shadow-md transition-all duration-200 flex flex-col items-center text-center justify-center gap-2 cursor-pointer w-full`}
+                  >
+                    <div className="h-9 w-9 bg-green-50 dark:bg-green-950/20 rounded-lg flex items-center justify-center">
+                      {action.icon}
+                    </div>
+                    <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right sidebar column inside Dashboard */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* Today's Schedule Card */}
+            <Card className={`p-4 border ${cardTheme} rounded-[16px]`}>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-4">Today's Schedule</h4>
+              {bookings.filter(b => new Date(b.bookingDate).toDateString() === new Date().toDateString()).length === 0 ? (
+                <p className="text-xs text-zinc-400 italic py-2 pl-3">No bookings scheduled for today.</p>
+              ) : (
+                <div className="relative border-l-2 border-zinc-150 dark:border-zinc-800 ml-3 pl-5 space-y-6">
+                  {bookings
+                    .filter(b => new Date(b.bookingDate).toDateString() === new Date().toDateString())
+                    .map((b, idx) => {
+                      const isUpcoming = ['pending', 'accepted', 'on_the_way', 'started'].includes(b.status)
+                      const dotColor = b.status === 'pending' ? 'bg-amber-400' : isUpcoming ? 'bg-[#16A34A] animate-pulse' : 'bg-zinc-350'
+                      return (
+                        <div key={b._id || idx} className="relative">
+                          <span className={`absolute -left-[27px] top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-zinc-950 ${dotColor}`} />
+                          <span className="text-[10px] font-bold text-zinc-400 block">{b.bookingTime}</span>
+                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 mt-0.5 block">
+                            {capitalizeWords(b.service?.serviceName || b.service?.title)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </Card>
+
+            {/* Customer Reviews card */}
+            <Card className={`p-4 border ${cardTheme} rounded-[16px]`}>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-4">Customer Reviews</h4>
+              {reviews.length === 0 ? (
+                <p className="text-xs text-zinc-400 text-center py-4">No reviews yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.slice(0, 5).map((r) => (
+                    <div key={r._id} className="text-xs border-b border-zinc-100 dark:border-zinc-850 pb-3 last:border-none last:pb-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                          {r.customer ? `${r.customer.firstName} ${r.customer.lastName}` : 'Anonymous'}
+                        </span>
+                        <div className="flex text-amber-500 font-medium items-center gap-0.5">
+                          <StarRateOutlinedIcon style={{ fontSize: 13 }} />
+                          <span>{r.rating}</span>
+                        </div>
+                      </div>
+                      <p className={`mt-1 italic ${textMuted} leading-relaxed`}>
+                        "{capitalize(r.review || 'Excellent service support.')}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Notifications panel widget */}
+            <Card className={`p-4 border ${cardTheme} rounded-[16px]`}>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-4">Recent Alerts</h4>
+              <div className="space-y-3">
+                {dynamicAlerts.map((alert, idx) => (
+                  <div key={idx} className="flex gap-2.5 items-start text-xs text-zinc-650 dark:text-zinc-350">
+                    <span className={`mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full ${alert.type === 'kyc' ? 'bg-blue-500' : alert.type === 'payment' ? 'bg-[#16A34A]' : 'bg-amber-400'}`} />
+                    <div>
+                      <p className="font-medium leading-tight">{alert.text}</p>
+                      <span className="text-[10px] text-zinc-400 mt-1 block">{alert.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderBookingsTab = () => {
+    const filteredList = getFilteredBookings(bookings)
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {['all', 'pending', 'active', 'completed'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setBookingStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize border cursor-pointer transition-colors ${
+                  bookingStatusFilter === status
+                    ? 'bg-[#16A34A] border-[#16A34A] text-white'
+                    : 'bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800'
+                }`}
+              >
+                {status} Bookings
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search bookings..."
+              value={bookingSearch}
+              onChange={(e) => setBookingSearch(e.target.value)}
+              className={`rounded-lg border px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#16A34A] w-[180px] ${inputBg}`}
+            />
+            <select
+              value={bookingFilter}
+              onChange={(e) => setBookingFilter(e.target.value)}
+              className={`rounded-lg border px-2 py-1.5 text-xs focus:outline-none ${inputBg}`}
+            >
+              <option value="all">All Dates</option>
+              <option value="Today">Today</option>
+              <option value="This Week">This Week</option>
+              <option value="This Month">This Month</option>
+            </select>
+          </div>
+        </div>
+
+        <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+          {filteredList.length === 0 ? (
+            <p className={`text-center py-10 ${textMuted} text-sm`}>No bookings match the search criteria.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse min-w-[800px]">
+                <thead>
+                  <tr className={`border-b ${borderCol} text-zinc-500 font-semibold bg-zinc-50/50 dark:bg-zinc-900/30`}>
+                    <th className="py-3 px-4">Booking ID</th>
+                    <th className="py-3 px-4">Customer Name</th>
+                    <th className="py-3 px-4">Service Required</th>
+                    <th className="py-3 px-4">Date & Time</th>
+                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredList.map((b) => (
+                    <tr key={b._id} className={`border-b ${borderCol} hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 transition-colors`}>
+                      <td className="py-4 px-4 font-mono font-bold text-zinc-500">{b.bookingNumber}</td>
+                      <td className="py-4 px-4">
+                        <span className="font-semibold block">{b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Guest User'}</span>
+                        <span className="text-[10px] text-zinc-400">{b.customer?.phone || 'No phone'}</span>
+                      </td>
+                      <td className="py-4 px-4 font-medium">{capitalizeWords(b.service?.serviceName || b.service?.title)}</td>
+                      <td className="py-4 px-4">
+                        <span className="block font-semibold">{new Date(b.bookingDate).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-zinc-400">{b.bookingTime}</span>
+                      </td>
+                      <td className="py-4 px-4 font-bold text-[#16A34A]">₹{b.amount}</td>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          b.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/20'
+                            : b.status === 'pending'
+                            ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/20'
+                            : b.status === 'rejected' || b.status === 'cancelled'
+                            ? 'bg-red-100 text-red-600 dark:bg-red-950/20'
+                            : 'bg-blue-100 text-blue-600 dark:bg-blue-950/20'
+                        }`}>
+                          {capitalize(b.status.replace(/_/g, ' '))}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => openBookingDetails(b)}
+                            className="px-2.5 py-1 text-[10px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-md cursor-pointer border border-zinc-200"
+                          >
+                            Manage
+                          </button>
+                          {b.status === 'completed' && (
+                            <button
+                              onClick={() => triggerInvoiceModal(b)}
+                              className="px-2.5 py-1 text-[10px] font-bold text-[#16A34A] bg-green-50 hover:bg-green-100 rounded-md cursor-pointer border border-green-200"
+                            >
+                              Invoice
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const renderCalendarTab = () => {
+    const days = getDaysInMonth(calendarDate)
+    const monthName = calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })
+
+    return (
+      <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white">{monthName} Calendar</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+              className="p-1 border border-zinc-200 hover:bg-zinc-100 rounded-lg cursor-pointer text-xs"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setCalendarDate(new Date())}
+              className="p-1 border border-zinc-200 hover:bg-zinc-100 rounded-lg cursor-pointer text-xs font-semibold"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+              className="p-1 border border-zinc-200 hover:bg-zinc-100 rounded-lg cursor-pointer text-xs"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-zinc-400 mb-2">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2">
+          {/* Pad offset days */}
+          {Array.from({ length: new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay() }).map((_, idx) => (
+            <div key={`offset-${idx}`} className="h-16 bg-zinc-50/30 rounded-xl" />
+          ))}
+
+          {days.map((day) => {
+            const hasBooking = bookings.some(b => new Date(b.bookingDate).toDateString() === day.toDateString())
+            const activeBookings = bookings.filter(b => new Date(b.bookingDate).toDateString() === day.toDateString())
+            return (
+              <div
+                key={day.getDate()}
+                className={`h-16 border ${borderCol} rounded-xl p-1.5 flex flex-col justify-between items-start transition-colors hover:border-[#16A34A] cursor-pointer bg-white dark:bg-zinc-900`}
+              >
+                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{day.getDate()}</span>
+                {hasBooking && (
+                  <div className="w-full flex gap-1 mt-auto">
+                    {activeBookings.slice(0, 2).map((ab, idx) => (
+                      <span
+                        key={idx}
+                        onClick={() => openBookingDetails(ab)}
+                        className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                          ab.status === 'completed' ? 'bg-emerald-500' : ab.status === 'pending' ? 'bg-amber-500' : 'bg-blue-500'
+                        }`}
+                        title={ab.service?.title || 'Booking slot'}
+                      />
+                    ))}
+                    {activeBookings.length > 2 && (
+                      <span className="text-[8px] font-black text-[#16A34A]">+{activeBookings.length - 2}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+    )
+  }
+
+  const renderCustomersTab = () => {
+    // Unique list of customers from actual bookings
+    const customerMap = {}
+    bookings.forEach(b => {
+      if (b.customer && !customerMap[b.customer._id]) {
+        customerMap[b.customer._id] = {
+          info: b.customer,
+          totalSpend: 0,
+          totalBookingsCount: 0
+        }
+      }
+      if (b.customer) {
+        customerMap[b.customer._id].totalSpend += b.amount || 0
+        customerMap[b.customer._id].totalBookingsCount += 1
+      }
     })
 
-  // Loader state
-  const isGlobalLoading = profileLoading || bookingsLoading || reviewsLoading || categoriesLoading
+    const list = Object.values(customerMap)
 
-  // Dynamic CSS classes for Theme compatibility
-  const bgTheme = theme === 'light' ? 'bg-[#f8ebe6] text-zinc-900' : 'bg-zinc-950 text-zinc-100'
-  const cardTheme = theme === 'light' ? 'bg-white border-zinc-200' : 'bg-zinc-900 border-zinc-800'
-  const textMuted = theme === 'light' ? 'text-zinc-500' : 'text-zinc-400'
-  const inputBg = theme === 'light' ? 'bg-zinc-50 text-zinc-900' : 'bg-zinc-800 text-zinc-100 border-zinc-700'
+    return (
+      <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+        <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">My Customers Directory</h3>
+        {list.length === 0 ? (
+          <p className="text-xs text-zinc-400 py-6 text-center">No customers directory available yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse min-w-[600px]">
+              <thead>
+                <tr className={`border-b ${borderCol} text-zinc-500 font-semibold bg-zinc-50/50`}>
+                  <th className="py-2.5 px-4">Customer Name</th>
+                  <th className="py-2.5 px-4">Contact Phone</th>
+                  <th className="py-2.5 px-4">Email</th>
+                  <th className="py-2.5 px-4 text-center">Bookings Count</th>
+                  <th className="py-2.5 px-4 text-right">Total Payments</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((cust) => (
+                  <tr key={cust.info._id} className={`border-b ${borderCol} hover:bg-zinc-50/50 transition-colors`}>
+                    <td className="py-3 px-4 font-bold text-zinc-850 dark:text-zinc-150">
+                      {capitalizeWords(`${cust.info.firstName} ${cust.info.lastName}`)}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-medium text-zinc-600 dark:text-zinc-350">{cust.info.phone || 'N/A'}</td>
+                    <td className="py-3 px-4 text-zinc-500">{cust.info.email || 'N/A'}</td>
+                    <td className="py-3 px-4 text-center font-bold text-zinc-700 dark:text-zinc-300">{cust.totalBookingsCount}</td>
+                    <td className="py-3 px-4 text-right font-black text-[#16A34A]">₹{cust.totalSpend.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    )
+  }
+
+  const renderServicesTab = () => {
+    return (
+      <div className="space-y-6">
+        {/* Your Category Status info */}
+        <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-3">Professional Categories</h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {provider?.categories?.map((catApp) => (
+              <div key={catApp._id} className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/30 flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-xs block text-zinc-800 dark:text-zinc-200">
+                    {catApp.category?.name ? capitalizeWords(catApp.category.name) : 'Category'}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block mt-0.5">{catApp.category?.description || 'Active Domain'}</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                  catApp.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+                }`}>
+                  {catApp.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Quick Add and Manual Create Service card */}
+        <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">Add Service to Public Catalog</h3>
+          <div className="grid gap-4 md:grid-cols-2 mb-6">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2">Select standard template</label>
+              <select
+                className={`w-full rounded-xl border p-3.5 text-xs focus:outline-none ${inputBg}`}
+                defaultValue=""
+                onChange={(e) => {
+                  if (!e.target.value) return
+                  const s = defaultServices.find(ds => ds.name === e.target.value)
+                  if (s) {
+                    setCustomServiceName(s.name)
+                    setCustomServiceDesc(s.description)
+                    setCustomServiceImage(s.image)
+                    const catObj = categories.find(c => c.name.toLowerCase() === s.category.toLowerCase())
+                    if (catObj) setCustomServiceCategory(catObj._id)
+                  }
+                  e.target.value = ""
+                }}
+              >
+                <option value="" disabled>Choose a template to auto-fill...</option>
+                {defaultServices.map((ds, i) => (
+                  <option key={i} value={ds.name}>{ds.name} ({ds.category})</option>
+                ))}
+              </select>
+            </div>
+            
+            <form onSubmit={handleAddServiceSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Service Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customServiceName}
+                    onChange={(e) => setCustomServiceName(e.target.value)}
+                    className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Category *</label>
+                  <select
+                    required
+                    value={customServiceCategory}
+                    onChange={(e) => setCustomServiceCategory(e.target.value)}
+                    className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((c) => (
+                      <option key={c._id} value={c._id}>{capitalizeWords(c.name)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Short Description *</label>
+                <input
+                  type="text"
+                  required
+                  value={customServiceDesc}
+                  onChange={(e) => setCustomServiceDesc(e.target.value)}
+                  className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+                />
+              </div>
+              <div className="flex items-end justify-between gap-4">
+                <div className="w-28">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Base Price (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={customPrice}
+                    onChange={(e) => setCustomPrice(e.target.value)}
+                    className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+                  />
+                </div>
+                <Button type="submit" variant="gradient" className="bg-[#16A34A] text-white px-5 py-2.5 text-xs font-bold rounded-lg cursor-pointer h-10 w-full justify-center">
+                  Add Service
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Card>
+
+        {/* List of offered services */}
+        <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">My Service Offerings</h3>
+          {myServices.length === 0 ? (
+            <p className="text-xs text-zinc-400 py-6 text-center">No service offerings listed yet.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {myServices.map((ps) => (
+                <div key={ps._id} className="p-4 border border-zinc-150 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 flex flex-col justify-between">
+                  <div>
+                    <h5 className="font-bold text-xs text-zinc-900 dark:text-white truncate">{capitalizeWords(ps.service?.serviceName)}</h5>
+                    <span className="inline-block text-[8px] bg-green-50 text-[#16A34A] font-bold px-2 py-0.5 rounded-full mt-1.5">
+                      {ps.service?.category?.name ? capitalizeWords(ps.service.category.name) : 'General'}
+                    </span>
+                    <p className="text-[10px] text-zinc-400 mt-2 line-clamp-2">{ps.service?.description}</p>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-4">
+                    <span className="font-black text-[#16A34A] text-sm">₹{ps.price}</span>
+                    <button
+                      onClick={() => handleRemoveService(ps._id)}
+                      className="text-red-500 hover:bg-red-50 p-1 rounded-lg border border-red-200 cursor-pointer"
+                    >
+                      <DeleteOutlineOutlinedIcon style={{ fontSize: 14 }} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const renderReviewsTab = () => {
+    return (
+      <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+        <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">Reviews & Comments Ledger</h3>
+        {reviews.length === 0 ? (
+          <p className="text-xs text-zinc-400 py-10 text-center">No customer feedback has been log yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((r) => (
+              <div key={r._id} className="p-4 border border-zinc-150 dark:border-zinc-800 rounded-xl bg-zinc-50/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 bg-zinc-200 text-zinc-700 flex items-center justify-center font-bold text-xs rounded-full">
+                      {r.customer?.firstName?.charAt(0).toUpperCase() || 'C'}
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-zinc-800 dark:text-zinc-200">
+                        {r.customer ? `${r.customer.firstName} ${r.customer.lastName}` : 'Anonymous Customer'}
+                      </span>
+                      <span className="text-[9px] text-zinc-400 block mt-0.5">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex text-amber-500 gap-0.5">
+                    {Array.from({ length: r.rating }).map((_, i) => (
+                      <StarRateOutlinedIcon key={i} style={{ fontSize: 14 }} />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-350 italic mt-3 leading-relaxed">
+                  "{capitalize(r.review || 'No comment message entered by user.')}"
+                </p>
+                {r.booking && (
+                  <span className="inline-block text-[9px] text-zinc-400 mt-2 font-mono">Booking ID: {r.booking.bookingNumber}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    )
+  }
+
+  const renderEarningsTab = () => {
+    const comBookings = bookings.filter(b => b.status === 'completed')
+    return (
+      <div className="space-y-6">
+        {/* Stats card */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card className={`p-4 border ${cardTheme} rounded-[16px] text-center`}>
+            <span className="text-[10px] font-bold text-zinc-450 uppercase block">Total Net Revenue</span>
+            <h3 className="text-2xl font-black text-[#16A34A] mt-1.5">₹{earningsSum.toLocaleString()}</h3>
+          </Card>
+          <Card className={`p-4 border ${cardTheme} rounded-[16px] text-center`}>
+            <span className="text-[10px] font-bold text-zinc-450 uppercase block">Settled Payouts</span>
+            <h3 className="text-2xl font-black text-[#16A34A] mt-1.5">₹{(earningsSum * 0.95).toLocaleString()}</h3>
+            <span className="text-[9px] text-zinc-400">95% split, 5% admin fee</span>
+          </Card>
+          <Card className={`p-4 border ${cardTheme} rounded-[16px] text-center`}>
+            <span className="text-[10px] font-bold text-zinc-450 uppercase block">Pending Settlement</span>
+            <h3 className="text-2xl font-black text-amber-500 mt-1.5">₹{(earningsSum * 0.05).toLocaleString()}</h3>
+          </Card>
+        </div>
+
+        {/* Ledger list */}
+        <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">Payout Transactions Ledger</h3>
+          {comBookings.length === 0 ? (
+            <p className="text-xs text-zinc-400 py-10 text-center">No completed transactions ledger yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className={`border-b ${borderCol} text-zinc-500 font-semibold bg-zinc-50/50`}>
+                    <th className="py-2.5 px-4">Booking Number</th>
+                    <th className="py-2.5 px-4">Service</th>
+                    <th className="py-2.5 px-4">Completion Date</th>
+                    <th className="py-2.5 px-4 text-center">Payment Method</th>
+                    <th className="py-2.5 px-4 text-right">Payout Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comBookings.map((b) => (
+                    <tr key={b._id} className={`border-b ${borderCol} hover:bg-zinc-50/50 transition-colors`}>
+                      <td className="py-3 px-4 font-mono font-bold text-zinc-500">{b.bookingNumber}</td>
+                      <td className="py-3 px-4 font-semibold">{capitalizeWords(b.service?.serviceName || b.service?.title)}</td>
+                      <td className="py-3 px-4">{b.completedAt ? new Date(b.completedAt).toLocaleDateString() : new Date(b.bookingDate).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-center font-bold text-indigo-500 capitalize">{b.paymentMethod || 'Cash'}</td>
+                      <td className="py-3 px-4 text-right font-black text-[#16A34A]">₹{b.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const renderMessagesTab = () => {
+    const selectedHistory = chatHistories[selectedChat] || []
+    const senderName = messagesList.find(m => m.id === selectedChat)?.sender || "Chat User"
+
+    return (
+      <Card className={`p-0 border ${cardTheme} rounded-[16px] overflow-hidden flex h-[500px]`}>
+        {/* Left Side: Users list */}
+        <div className="w-1/3 border-r border-zinc-100 dark:border-zinc-850 flex flex-col">
+          <div className="p-4 border-b border-zinc-100 dark:border-zinc-850 bg-zinc-50/40 font-bold text-xs text-zinc-500 uppercase tracking-wider">
+            Conversations
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {messagesList.map((msg) => (
+              <div
+                key={msg.id}
+                onClick={() => setSelectedChat(msg.id)}
+                className={`p-3.5 border-b border-zinc-100 dark:border-zinc-850 cursor-pointer transition-colors flex flex-col gap-1.5 ${
+                  selectedChat === msg.id ? 'bg-green-50/30 border-l-4 border-[#16A34A]' : 'hover:bg-zinc-50/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-zinc-850 dark:text-zinc-150">{msg.sender}</span>
+                  <span className="text-[9px] text-zinc-400">{msg.time}</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 truncate">{msg.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Side: Conversation Area */}
+        <div className="flex-1 flex flex-col justify-between">
+          {/* Header */}
+          <div className="p-4 border-b border-zinc-100 dark:border-zinc-850 bg-zinc-50/40 flex items-center justify-between">
+            <span className="font-bold text-xs text-zinc-800 dark:text-zinc-200">{senderName}</span>
+            <span className="h-2 w-2 rounded-full bg-[#10B981]" />
+          </div>
+          
+          {/* History */}
+          <div className="flex-1 p-4 overflow-y-auto bg-zinc-50/20 space-y-3">
+            {selectedHistory.map((h, i) => {
+              const isCust = h.sender === 'customer'
+              return (
+                <div key={i} className={`flex ${isCust ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`p-3 rounded-2xl max-w-xs text-xs font-medium ${
+                    isCust ? 'bg-zinc-100 text-zinc-800' : 'bg-[#16A34A] text-white'
+                  }`}>
+                    <p className="leading-relaxed">{h.text}</p>
+                    <span className={`text-[8px] text-right block mt-1 ${isCust ? 'text-zinc-400' : 'text-zinc-200'}`}>
+                      {h.time}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Reply Form */}
+          <form onSubmit={sendChatMessage} className="p-3 border-t border-zinc-150 dark:border-zinc-850 bg-white dark:bg-zinc-950 flex gap-2">
+            <input
+              type="text"
+              placeholder="Type message response..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              className={`flex-grow rounded-xl border px-3 py-2 text-xs focus:outline-none ${inputBg}`}
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </Card>
+    )
+  }
+
+  const renderNotificationsTab = () => {
+    return (
+      <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
+        <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-4">System Alerts & Notifications Log</h3>
+        <div className="space-y-3">
+          {dynamicAlerts.map((n, i) => (
+            <div key={i} className="p-3 border-b border-zinc-100 dark:border-zinc-850 last:border-none flex gap-3 items-start text-xs">
+              <span className={`h-2 w-2 rounded-full mt-1 shrink-0 ${n.type === 'kyc' ? 'bg-blue-500' : n.type === 'payment' ? 'bg-[#16A34A]' : 'bg-amber-400'}`} />
+              <div>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200">{n.text}</p>
+                <span className="text-[10px] text-zinc-400 mt-1 block">{n.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    )
+  }
+
+  const renderProfileTab = () => {
+    return (
+      <Card className={`p-6 border ${cardTheme} rounded-[16px] max-w-3xl mx-auto shadow-sm`}>
+        <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-6">Business Settings & Profile details</h3>
+        
+        <form onSubmit={handleProfileSubmit} className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="flex items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-6">
+            <div className="relative">
+              <div className="h-20 w-20 overflow-hidden rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 flex items-center justify-center">
+                {profileForm.profileImage ? (
+                  <img className="h-full w-full object-cover" src={profileForm.profileImage} alt="profile" />
+                ) : (
+                  <PersonOutlineOutlinedIcon style={{ fontSize: 32 }} className="text-zinc-400" />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-[#16A34A] text-white flex items-center justify-center shadow-md hover:bg-[#15803D] cursor-pointer border border-white"
+                title="Change image"
+              >
+                <CameraAltOutlinedIcon style={{ fontSize: 13 }} />
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+            <div>
+              <span className="font-bold text-xs text-zinc-800 dark:text-zinc-200 block">Avatar logo</span>
+              <span className="text-[10px] text-zinc-400 block mt-1">Recommended size 200x200px. JPG, PNG formats.</span>
+              {uploadingImage && <span className="text-[10px] font-bold text-[#16A34A] block mt-1">Uploading...</span>}
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">First Name</label>
+              <input
+                type="text"
+                required
+                value={profileForm.firstName}
+                onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Last Name</label>
+              <input
+                type="text"
+                required
+                value={profileForm.lastName}
+                onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Phone Contact</label>
+              <input
+                type="text"
+                required
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Business / Shop Name</label>
+              <input
+                type="text"
+                value={profileForm.businessName}
+                onChange={(e) => setProfileForm({ ...profileForm, businessName: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Years Experience</label>
+              <input
+                type="number"
+                value={profileForm.experience}
+                onChange={(e) => setProfileForm({ ...profileForm, experience: Number(e.target.value) })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">City</label>
+              <input
+                type="text"
+                required
+                value={profileForm.city}
+                onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Full Address</label>
+              <input
+                type="text"
+                required
+                value={profileForm.fullAddress}
+                onChange={(e) => setProfileForm({ ...profileForm, fullAddress: e.target.value })}
+                className={`w-full rounded-xl border p-3 text-xs focus:outline-none ${inputBg}`}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
+            <Button
+              type="submit"
+              variant="gradient"
+              disabled={actionLoading}
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs px-6 py-2.5 rounded-xl cursor-pointer"
+            >
+              {actionLoading ? 'Saving...' : 'Save Settings'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    )
+  }
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboardTab()
+      case 'bookings':
+        return renderBookingsTab()
+      case 'calendar':
+        return renderCalendarTab()
+      case 'customers':
+        return renderCustomersTab()
+      case 'services':
+        return renderServicesTab()
+      case 'reviews':
+        return renderReviewsTab()
+      case 'earnings':
+        return renderEarningsTab()
+      case 'messages':
+        return renderMessagesTab()
+      case 'notifications':
+        return renderNotificationsTab()
+      case 'profile':
+        return renderProfileTab()
+      default:
+        return renderDashboardTab()
+    }
+  }
 
   return (
-    <div className={`dashboard-shell ${bgTheme}`}>
+    <div className={`dashboard-shell ${bgMain} font-sans flex h-screen overflow-hidden`}>
+      {/* Redesigned Premium Sidebar */}
       <ProviderSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
+        provider={provider}
+        userDetails={userDetails}
       />
 
-      <main className="main-col p-4 md:p-8">
-        {/* Header bar */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        
+        {/* Sticky Top Navbar */}
+        <header className="h-[70px] shrink-0 border-b border-border-custom flex items-center justify-between px-6 bg-card-bg sticky top-0 z-30 transition-colors duration-200">
+          <div>
+            <h2 className="text-sm font-extrabold text-text-main uppercase tracking-wider">
+              {activeTab === 'dashboard' ? 'Overview Dashboard' : activeTab}
+            </h2>
+          </div>
+          
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="h-16 w-16 overflow-hidden rounded-full border-4 border-amber-500/20 bg-zinc-100">
-                {userDetails?.profileImage ? (
-                  <img
-                    className="h-full w-full object-cover"
-                    src={userDetails.profileImage}
-                    alt="profile"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-white">
-                    <PersonOutlineOutlinedIcon fontSize="large" />
-                  </div>
-                )}
-              </div>
+            {/* Search input in navbar */}
+            <div className="relative hidden md:block">
+              <input
+                type="text"
+                placeholder="Search resources..."
+                className="pl-8 pr-3 py-1.5 rounded-lg border border-border-custom bg-input-bg text-text-main text-xs focus:outline-none w-[200px]"
+              />
+              <SearchOutlinedIcon className="absolute left-2.5 top-2.5 text-text-muted" style={{ fontSize: 13 }} />
             </div>
-            <div>
-              <h1 className="m-0 text-3xl font-bold tracking-tight">
-                {userDetails ? capitalizeWords(`${userDetails.firstName} ${userDetails.lastName}`) : 'Loading...'}
-              </h1>
-              <p className={`mt-1 text-sm ${textMuted}`}>
-                {provider?.businessName ? capitalizeWords(provider.businessName) : 'Service Provider'}
-              </p>
+
+            {/* Notification triggers */}
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className="h-8 w-8 rounded-lg hover:bg-shell-bg flex items-center justify-center text-text-muted relative cursor-pointer"
+            >
+              <NotificationsOutlinedIcon fontSize="small" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" />
+            </button>
+
+            {/* Message triggers */}
+            <button
+              onClick={() => setActiveTab('messages')}
+              className="h-8 w-8 rounded-lg hover:bg-shell-bg flex items-center justify-center text-text-muted relative cursor-pointer"
+            >
+              <MessageOutlinedIcon fontSize="small" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-[#16A34A] rounded-full animate-pulse" />
+            </button>
+            
+            {/* User Profile initials */}
+            <div
+              onClick={() => setActiveTab('profile')}
+              className="h-8 w-8 rounded-full bg-green-50 text-[#16A34A] flex items-center justify-center font-bold text-xs border border-green-200 cursor-pointer"
+              title="Go to settings"
+            >
+              {userDetails?.firstName?.charAt(0).toUpperCase() || 'P'}
             </div>
           </div>
+        </header>
 
-          {/* KYC Status Badge */}
-          {provider && (
-            <div>
-              {provider.kycStatus === 'approved' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-500 border border-emerald-500/20">
-                  <CheckCircleOutlineOutlinedIcon fontSize="small" /> Verified Partner
-                </span>
-              )}
-              {provider.kycStatus === 'pending' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 border border-amber-500/20">
-                  <InfoOutlinedIcon fontSize="small" /> KYC Verification Pending
-                </span>
-              )}
-              {provider.kycStatus === 'rejected' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-500 border border-red-500/20">
-                  <HighlightOffOutlinedIcon fontSize="small" /> Verification Rejected
-                </span>
-              )}
+        {/* Dynamic scrollable body panel */}
+        <div className="flex-grow overflow-y-auto overflow-x-hidden p-6">
+          
+          {/* Notification toast */}
+          {notification && (
+            <div className="mb-4 bg-[#16A34A] text-white font-bold text-xs px-4 py-3 rounded-xl shadow-md border-l-4 border-emerald-600 animate-fade-up">
+              {notification}
             </div>
           )}
+
+          {/* Tab Header Greeting (Only for dashboard Overview) */}
+          {activeTab === 'dashboard' && (
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-white leading-tight">
+                  Welcome Back, {userDetails ? capitalizeWords(userDetails.firstName) : 'Vijay'} 👋
+                </h1>
+                <p className={`text-xs mt-1 leading-relaxed ${textMuted}`}>
+                  Manage your bookings and services efficiently.
+                </p>
+              </div>
+
+              {/* Availability Toggle */}
+              <div className="flex items-center gap-2.5">
+                <span className={`text-xs font-bold ${isOnline ? 'text-[#16A34A]' : 'text-zinc-400'}`}>
+                  {isOnline ? 'Available Today' : 'Unavailable'}
+                </span>
+                <button
+                  onClick={toggleOnlineStatus}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isOnline ? 'bg-[#16A34A]' : 'bg-zinc-200'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOnline ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Render Tab Contents */}
+          {renderTabContent()}
+
         </div>
+      </div>
 
-        {/* Action / Success Notifications */}
-        {notification && (
-          <div className="mb-6 animate-pulse rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow-lg">
-            {notification}
+      {/* Booking Details Right-Side Drawer */}
+      {drawerOpen && selectedBooking && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+          <div
+            className="fixed inset-0"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className={`w-full max-w-md ${theme === 'light' ? 'bg-white' : 'bg-zinc-950'} h-full shadow-2xl border-l ${borderCol} p-6 flex flex-col justify-between z-10 relative overflow-y-auto animate-slide-left`}>
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between border-b pb-4 mb-5 border-zinc-100 dark:border-zinc-800">
+                <div>
+                  <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">Booking Details</h3>
+                  <span className="font-mono text-xs text-zinc-400">Order: {selectedBooking.bookingNumber}</span>
+                </div>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="h-8 w-8 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-lg flex items-center justify-center text-zinc-400 cursor-pointer"
+                >
+                  <CloseOutlinedIcon fontSize="small" />
+                </button>
+              </div>
+
+              {/* Status block */}
+              <div className="mb-6 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-450">Current Status</span>
+                <div className="flex items-center justify-between mt-1.5">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                    selectedBooking.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+                  }`}>
+                    {capitalize(selectedBooking.status.replace(/_/g, ' '))}
+                  </span>
+                  <span className="text-xs font-black text-[#16A34A]">₹{selectedBooking.amount}</span>
+                </div>
+              </div>
+
+              {/* Customer Details */}
+              <div className="space-y-4 mb-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Customer Details</h4>
+                <div className="grid grid-cols-[100px_1fr] text-xs gap-y-2.5">
+                  <span className={textMuted}>Name:</span>
+                  <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                    {selectedBooking.customer ? `${selectedBooking.customer.firstName} ${selectedBooking.customer.lastName}` : 'Guest User'}
+                  </span>
+
+                  <span className={textMuted}>Phone:</span>
+                  <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">{selectedBooking.customer?.phone || 'N/A'}</span>
+
+                  <span className={textMuted}>Email:</span>
+                  <span className="text-zinc-850 dark:text-zinc-250">{selectedBooking.customer?.email || 'N/A'}</span>
+                </div>
+              </div>
+
+              {/* Service Details */}
+              <div className="space-y-4 mb-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Service details</h4>
+                <div className="grid grid-cols-[100px_1fr] text-xs gap-y-2.5">
+                  <span className={textMuted}>Service:</span>
+                  <span className="font-bold text-zinc-850 dark:text-zinc-200">
+                    {capitalizeWords(selectedBooking.service?.serviceName || selectedBooking.service?.title)}
+                  </span>
+
+                  <span className={textMuted}>Date:</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{new Date(selectedBooking.bookingDate).toLocaleDateString()}</span>
+
+                  <span className={textMuted}>Time Slot:</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{selectedBooking.bookingTime}</span>
+
+                  <span className={textMuted}>Address:</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200 leading-relaxed">
+                    {selectedBooking.address}, {capitalizeWords(selectedBooking.city)}, {selectedBooking.state} - {selectedBooking.pincode}
+                  </span>
+
+                  <span className={textMuted}>Client Notes:</span>
+                  <span className="italic text-zinc-500">{selectedBooking.notes || 'No notes left by client.'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick action buttons */}
+            <div className="border-t pt-4 border-zinc-150 dark:border-zinc-800 flex gap-2.5">
+              {selectedBooking.status === 'pending' && (
+                <>
+                  <button
+                    onClick={() => handleUpdateStatus(selectedBooking._id, 'accepted')}
+                    className="flex-1 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer text-center"
+                  >
+                    Accept Request
+                  </button>
+                  <button
+                    onClick={() => handleUpdateStatus(selectedBooking._id, 'rejected')}
+                    className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-850 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-350 text-xs font-bold rounded-xl cursor-pointer text-center"
+                  >
+                    Decline
+                  </button>
+                </>
+              )}
+
+              {selectedBooking.status === 'accepted' && (
+                <button
+                  onClick={() => handleUpdateStatus(selectedBooking._id, 'on_the_way')}
+                  className="w-full py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer text-center"
+                >
+                  Mark On The Way
+                </button>
+              )}
+
+              {selectedBooking.status === 'on_the_way' && (
+                <button
+                  onClick={() => handleUpdateStatus(selectedBooking._id, 'started')}
+                  className="w-full py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer text-center"
+                >
+                  Verify Start OTP
+                </button>
+              )}
+
+              {selectedBooking.status === 'started' && (
+                <button
+                  onClick={() => handleUpdateStatus(selectedBooking._id, 'completed')}
+                  className="w-full py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer text-center"
+                >
+                  Verify End OTP & Complete
+                </button>
+              )}
+
+              {['completed', 'rejected', 'cancelled'].includes(selectedBooking.status) && (
+                <span className="w-full text-center text-xs text-zinc-400 py-2.5 font-bold bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                  Transaction finalized. No actions pending.
+                </span>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* Global Loading Spinner */}
-        {isGlobalLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-          </div>
-        )}
-
-        {!isGlobalLoading && (
-          <>
-            {/* ─── TAB: DASHBOARD ─── */}
-            {activeTab === 'dashboard' && (
-              <div className="flex flex-col gap-8">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {/* Earnings */}
-                  <div className={`dashboard-card flex items-center justify-between border ${cardTheme} transition-transform hover:-translate-y-1`}>
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>Total Earnings</p>
-                      <h3 className="mt-1 text-2xl font-bold text-amber-500">
-                        ₹{provider?.totalEarnings?.toLocaleString() || 0}
-                      </h3>
-                    </div>
-                    <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500">
-                      <CurrencyRupeeOutlinedIcon />
-                    </div>
-                  </div>
-
-                  {/* Bookings */}
-                  <div className={`dashboard-card flex items-center justify-between border ${cardTheme} transition-transform hover:-translate-y-1`}>
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>Completed Jobs</p>
-                      <h3 className="mt-1 text-2xl font-bold text-amber-500">{provider?.totalBookings || 0}</h3>
-                    </div>
-                    <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500">
-                      <CalendarMonthOutlinedIcon />
-                    </div>
-                  </div>
-
-                  {/* Rating */}
-                  <div className={`dashboard-card flex items-center justify-between border ${cardTheme} transition-transform hover:-translate-y-1`}>
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>Rating</p>
-                      <h3 className="mt-1 text-2xl font-bold text-amber-500">{provider?.averageRating || 'N/A'}</h3>
-                    </div>
-                    <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500">
-                      <StarRateOutlinedIcon />
-                    </div>
-                  </div>
-
-                  {/* Experience */}
-                  <div className={`dashboard-card flex items-center justify-between border ${cardTheme} transition-transform hover:-translate-y-1`}>
-                    <div>
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>Experience</p>
-                      <h3 className="mt-1 text-2xl font-bold text-amber-500">{provider?.experience || 0} Yrs</h3>
-                    </div>
-                    <div className="rounded-2xl bg-amber-500/10 p-3 text-amber-500">
-                      <WorkOutlineOutlinedIcon />
-                    </div>
-                  </div>
-                </div>
-
-                {/* KYC Guidance Banner */}
-                {provider && provider.kycStatus === 'pending' && (
-                  <div className="rounded-[28px] border border-amber-500/20 bg-amber-500/10 p-6">
-                    <h4 className="text-base font-bold text-amber-500 flex items-center gap-2">
-                      <InfoOutlinedIcon /> Verification Under Process
-                    </h4>
-                    <p className={`mt-2 text-sm leading-relaxed ${textMuted}`}>
-                      We are currently verifying your professional certificates and credentials. It typically takes 24-48 hours. 
-                      Once verified, you will receive confirmation by email and you will start receiving direct service queries from users.
-                    </p>
-                  </div>
-                )}
-
-                {/* Recent Bookings section */}
-                <div className={`dashboard-card border ${cardTheme}`}>
-                  <h3 className="text-xl font-bold mb-4">Recent Bookings</h3>
-                  {bookings.length === 0 ? (
-                    <p className={`py-6 text-center ${textMuted}`}>No bookings assigned yet.</p>
-                  ) : (
-                    <div className="table-scroll">
-                      <table className="w-full border-collapse text-left text-sm">
-                        <thead>
-                          <tr className={`border-b ${theme === 'light' ? 'border-zinc-200' : 'border-zinc-800'}`}>
-                            <th className="py-3 font-semibold">Booking ID</th>
-                            <th className="py-3 font-semibold">Service</th>
-                            <th className="py-3 font-semibold">Customer</th>
-                            <th className="py-3 font-semibold">Date & Time</th>
-                            <th className="py-3 font-semibold">Amount</th>
-                            <th className="py-3 font-semibold">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {bookings.slice(0, 5).map((b) => (
-                            <tr key={b._id} className={`border-b ${theme === 'light' ? 'border-zinc-100' : 'border-zinc-800/50'} hover:bg-black/5`}>
-                              <td className="py-4 font-mono text-xs">{b.bookingNumber}</td>
-                              <td className="py-4 font-medium">{capitalizeWords(b.service?.title) || 'N/A'}</td>
-                              <td className="py-4">
-                                {b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}
-                              </td>
-                              <td className="py-4">
-                                {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
-                              </td>
-                              <td className="py-4 font-bold text-amber-500">₹{b.amount}</td>
-                              <td className="py-4">
-                                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                  b.status === 'completed'
-                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                    : b.status === 'pending'
-                                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                    : b.status === 'rejected' || b.status === 'cancelled'
-                                    ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                                    : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
-                                }`}>
-                                  {capitalizeWords(b.status.replace(/_/g, ' '))}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ─── TAB: BOOKINGS ─── */}
-            {activeTab === 'bookings' && (
-              <div className="flex flex-col gap-6">
-                {/* Filters */}
-                <div className="flex flex-wrap gap-2">
-                  {['all', 'pending', 'active', 'completed'].map((f) => (
-                    <button
-                      key={f}
-                      className={`rounded-2xl px-4 py-1.5 text-xs font-semibold capitalize border transition-all ${
-                        bookingFilter === f
-                          ? 'bg-amber-500 border-amber-500 text-white shadow-md'
-                          : theme === 'light'
-                          ? 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
-                      }`}
-                      onClick={() => setBookingFilter(f)}
-                    >
-                      {f} Bookings
-                    </button>
-                  ))}
-                </div>
-
-                {/* Search and Sort controls */}
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                  <input
-                    type="text"
-                    placeholder="Search bookings by ID, customer name or service..."
-                    value={bookingSearch}
-                    onChange={(e) => setBookingSearch(e.target.value)}
-                    className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                  />
-                  <div className="flex items-center gap-3">
-                    <select
-                      value={bookingSort}
-                      onChange={(e) => setBookingSort(e.target.value)}
-                      className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                    >
-                      <option value="dateNewest">Date: Newest First</option>
-                      <option value="dateOldest">Date: Oldest First</option>
-                      <option value="amountHigh">Price: High to Low</option>
-                      <option value="amountLow">Price: Low to High</option>
-                    </select>
-
-                    {/* Layout Switcher */}
-                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
-                      <button
-                        onClick={() => bookingsView.toggleView()}
-                        className={`p-2 rounded-lg transition-colors ${
-                          bookingsView.view === 'table'
-                            ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                        }`}
-                        title="Table View"
-                      >
-                        <TableRowsOutlinedIcon fontSize="small" />
-                      </button>
-                      <button
-                        onClick={() => bookingsView.toggleView()}
-                        className={`p-2 rounded-lg transition-colors ${
-                          bookingsView.view === 'card'
-                            ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                        }`}
-                        title="Card View"
-                      >
-                        <GridViewOutlinedIcon fontSize="small" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bookings cards/list */}
-                {filteredBookings.length === 0 ? (
-                  <div className={`dashboard-card text-center py-12 border ${cardTheme}`}>
-                    <p className={textMuted}>No bookings match the filter criteria.</p>
-                  </div>
-                ) : bookingsView.view === 'table' ? (
-                  <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                    <table className="w-full border-collapse text-left text-sm min-w-[800px]">
-                      <thead>
-                        <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
-                          <th className="p-4 font-semibold">Booking ID</th>
-                          <th className="p-4 font-semibold">Service</th>
-                          <th className="p-4 font-semibold">Customer</th>
-                          <th className="p-4 font-semibold">Date & Time</th>
-                          <th className="p-4 font-semibold">Amount</th>
-                          <th className="p-4 font-semibold">Status</th>
-                          <th className="p-4 font-semibold text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredBookings.map((b) => (
-                          <tr key={b._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
-                            <td className="p-4 font-mono text-xs text-amber-500 font-bold">{b.bookingNumber}</td>
-                            <td className="p-4 font-medium">
-                              <div>{capitalizeWords(b.service?.title) || 'N/A'}</div>
-                              <div className="text-[10px] text-zinc-400">
-                                Category: {capitalizeWords(b.service?.category?.title) || 'N/A'}
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div>{b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}</div>
-                              <div className="text-xs text-zinc-400">{b.customer?.phone || 'N/A'}</div>
-                            </td>
-                            <td className="p-4">
-                              {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
-                            </td>
-                            <td className="p-4 font-bold text-amber-500">₹{b.amount}</td>
-                            <td className="p-4">
-                              <div className="flex flex-col gap-1.5 items-start">
-                                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                                  b.status === 'completed'
-                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                    : b.status === 'pending'
-                                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                    : b.status === 'rejected' || b.status === 'cancelled'
-                                    ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                                    : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
-                                }`}>
-                                  {capitalizeWords(b.status.replace(/_/g, ' '))}
-                                </span>
-                                {b.status === 'completed' && (
-                                  <span className={`text-[10px] font-semibold ${b.paymentStatus === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                    {b.paymentStatus === 'completed' ? `Paid (${capitalizeWords(b.paymentMethod)})` : 'Payment Pending'}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex flex-row justify-center gap-2">
-                                {b.status === 'pending' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="gradient"
-                                      disabled={actionLoading}
-                                      onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                                      title="Accept"
-                                    >
-                                      <CheckCircleOutlineOutlinedIcon fontSize="small" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      disabled={actionLoading}
-                                      onClick={() => handleUpdateStatus(b._id, 'rejected')}
-                                      title="Reject"
-                                    >
-                                      <CancelOutlinedIcon fontSize="small" />
-                                    </Button>
-                                  </>
-                                )}
-
-                                {b.status === 'accepted' && (
-                                  <Button
-                                    size="sm"
-                                    variant="gradient"
-                                    disabled={actionLoading}
-                                    onClick={() => handleUpdateStatus(b._id, 'on_the_way')}
-                                    title="On The Way"
-                                  >
-                                    <DirectionsCarOutlinedIcon fontSize="small" />
-                                  </Button>
-                                )}
-
-                                {b.status === 'on_the_way' && (
-                                  <Button
-                                    size="sm"
-                                    variant="gradient"
-                                    disabled={actionLoading}
-                                    onClick={() => handleUpdateStatus(b._id, 'started')}
-                                    title="Start Job"
-                                  >
-                                    <PlayCircleOutlineOutlinedIcon fontSize="small" />
-                                  </Button>
-                                )}
-
-                                {b.status === 'started' && (
-                                  <Button
-                                    size="sm"
-                                    variant="gradient"
-                                    disabled={actionLoading}
-                                    onClick={() => handleUpdateStatus(b._id, 'completed')}
-                                    title="Complete Job"
-                                  >
-                                    <TaskAltOutlinedIcon fontSize="small" />
-                                  </Button>
-                                )}
-
-                                {['completed', 'rejected', 'cancelled'].includes(b.status) && (
-                                  <span className={`text-xs font-semibold ${textMuted}`}>
-                                    No actions
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    {filteredBookings.map((b) => (
-                      <div key={b._id} className={`dashboard-card border ${cardTheme} flex flex-col justify-between min-w-0`}>
-                        <div>
-                          <div className="flex items-center justify-between border-b pb-3 mb-3 border-zinc-100 dark:border-zinc-800">
-                            <span className="font-mono text-xs text-amber-500 font-bold">{b.bookingNumber}</span>
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              b.status === 'completed'
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : b.status === 'pending'
-                                ? 'bg-amber-500/10 text-amber-500'
-                                : b.status === 'rejected' || b.status === 'cancelled'
-                                ? 'bg-red-500/10 text-red-500'
-                                : 'bg-indigo-500/10 text-indigo-500'
-                            }`}>
-                              {capitalizeWords(b.status.replace(/_/g, ' '))}
-                            </span>
-                          </div>
-
-                          <h4 className="text-lg font-bold">{capitalizeWords(b.service?.title) || 'N/A'}</h4>
-                          <p className={`text-xs mt-1 font-semibold text-zinc-400`}>
-                            Category: {capitalizeWords(b.service?.category?.title) || 'N/A'}
-                          </p>
-
-                          <div className="mt-4 space-y-2 text-sm">
-                            <div className="grid grid-cols-[90px_1fr] gap-2 items-start">
-                              <span className={textMuted}>Customer:</span>
-                              <span className="font-semibold text-right break-words">
-                                {b.customer ? capitalizeWords(`${b.customer.firstName} ${b.customer.lastName}`) : 'Unknown'}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-[90px_1fr] gap-2 items-start">
-                              <span className={textMuted}>Phone:</span>
-                              <span className="font-semibold text-right break-words">{b.customer?.phone || 'N/A'}</span>
-                            </div>
-                            <div className="grid grid-cols-[90px_1fr] gap-2 items-start">
-                              <span className={textMuted}>Date/Time:</span>
-                              <span className="font-semibold text-right break-words">
-                                {new Date(b.bookingDate).toLocaleDateString()} at {b.bookingTime}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-[90px_1fr] gap-2 items-start">
-                              <span className={textMuted}>Address:</span>
-                              <span className="font-semibold text-right break-words">
-                                {b.address}, {capitalizeWords(b.city)}
-                              </span>
-                            </div>
-                            <p className="flex justify-between border-t pt-2 mt-2 border-zinc-100 dark:border-zinc-800">
-                              <span className="font-bold">Total Payout:</span>
-                              <span className="font-bold text-amber-500">₹{b.amount}</span>
-                            </p>
-                            {b.status === 'completed' && (
-                              <div className="mt-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
-                                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 text-zinc-500">Payment Details</p>
-                                {b.paymentStatus === 'completed' ? (
-                                  <div>
-                                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Paid via {capitalizeWords(b.paymentMethod)}</p>
-                                    <p className="text-[10px] text-zinc-400 mt-0.5">On: {new Date(b.paymentDate).toLocaleString()}</p>
-                                  </div>
-                                ) : (
-                                  <p className="text-sm font-semibold text-amber-500">Pending Customer Payment</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Booking Status Action buttons */}
-                        <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                          {b.status === 'pending' && (
-                            <>
-                              <Button
-                                className="flex-1 flex items-center justify-center gap-2"
-                                variant="gradient"
-                                disabled={actionLoading}
-                                onClick={() => handleUpdateStatus(b._id, 'accepted')}
-                                title="Accept"
-                              >
-                                <CheckCircleOutlineOutlinedIcon fontSize="small" />
-                                <span>Accept</span>
-                              </Button>
-                              <Button
-                                className="flex-1 flex items-center justify-center gap-2"
-                                variant="outline"
-                                disabled={actionLoading}
-                                onClick={() => handleUpdateStatus(b._id, 'rejected')}
-                                title="Reject"
-                              >
-                                <CancelOutlinedIcon fontSize="small" />
-                                <span>Reject</span>
-                              </Button>
-                            </>
-                          )}
-
-                          {b.status === 'accepted' && (
-                            <Button
-                              className="w-full flex items-center justify-center gap-2"
-                              variant="gradient"
-                              disabled={actionLoading}
-                              onClick={() => handleUpdateStatus(b._id, 'on_the_way')}
-                              title="Mark On The Way"
-                            >
-                              <DirectionsCarOutlinedIcon fontSize="small" />
-                              <span>On The Way</span>
-                            </Button>
-                          )}
-
-                          {b.status === 'on_the_way' && (
-                            <Button
-                              className="w-full flex items-center justify-center gap-2"
-                              variant="gradient"
-                              disabled={actionLoading}
-                              onClick={() => handleUpdateStatus(b._id, 'started')}
-                              title="Start Job"
-                            >
-                              <PlayCircleOutlineOutlinedIcon fontSize="small" />
-                              <span>Start Job</span>
-                            </Button>
-                          )}
-
-                          {b.status === 'started' && (
-                            <Button
-                              className="w-full flex items-center justify-center gap-2"
-                              variant="gradient"
-                              disabled={actionLoading}
-                              onClick={() => handleUpdateStatus(b._id, 'completed')}
-                              title="Complete Job"
-                            >
-                              <TaskAltOutlinedIcon fontSize="small" />
-                              <span>Complete Job</span>
-                            </Button>
-                          )}
-
-                          {['completed', 'rejected', 'cancelled'].includes(b.status) && (
-                            <span className={`text-xs text-center w-full py-1 font-semibold ${textMuted}`}>
-                              No pending actions for this order.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ─── TAB: SERVICES ─── */}
-            {activeTab === 'services' && (
-              <div className="flex flex-col gap-8">
-                {/* Serviced Categories Section */}
-                <div className={`dashboard-card border rounded-[28px] p-6 md:p-8 ${cardTheme} shadow-xl relative overflow-hidden`}>
-                  {/* Decorative blur gradients */}
-                  <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
-                  <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl pointer-events-none" />
-
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold tracking-tight mb-1">Your Category Status</h3>
-                    <p className={`text-sm ${textMuted}`}>
-                      Manage and track your active domains and pending approvals.
-                    </p>
-                  </div>
-                  
-                  {/* Category Status list */}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-                    {provider?.categories?.map((catApp) => {
-                      const isApproved = catApp.status === 'approved';
-                      const isRejected = catApp.status === 'rejected';
-                      const statusColor = isApproved
-                        ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        : isRejected
-                        ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
-
-                      const letter = catApp.category?.name ? catApp.category.name.charAt(0).toUpperCase() : '?';
-
-                      return (
-                        <div
-                          key={catApp._id}
-                          className={`p-5 rounded-2xl border flex items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${
-                            theme === 'light'
-                              ? 'bg-zinc-50/80 border-zinc-100 hover:bg-white hover:border-zinc-200'
-                              : 'bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-900 hover:border-zinc-700'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3.5">
-                            {/* Avatar Category Letter or Image */}
-                            {catApp.category?.image ? (
-                              <img className="h-11 w-11 rounded-xl object-cover" src={catApp.category.image} alt={catApp.category.name} loading="lazy" />
-                            ) : (
-                              <div className={`h-11 w-11 rounded-xl flex items-center justify-center font-bold text-base shadow-inner ${
-                                isApproved
-                                  ? 'bg-emerald-500/10 text-emerald-500'
-                                  : isRejected
-                                  ? 'bg-red-500/10 text-red-500'
-                                  : 'bg-amber-500/10 text-amber-500'
-                              }`}>
-                                {letter}
-                              </div>
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-semibold text-base truncate text-zinc-900 dark:text-zinc-50">
-                                {catApp.category?.name ? capitalizeWords(catApp.category.name) : 'Unknown'}
-                              </span>
-                              <span className={`text-xs truncate max-w-[150px] ${textMuted}`}>
-                                {catApp.category?.description ? capitalize(catApp.category.description) : 'Professional Domain'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-1">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}`}>
-                              {/* Pulse Dot Indicator */}
-                              <span className={`h-1.5 w-1.5 rounded-full ${
-                                isApproved ? 'bg-emerald-500 animate-pulse' : isRejected ? 'bg-red-500' : 'bg-amber-500 animate-pulse'
-                              }`} />
-                              {capitalize(catApp.status)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Apply for Category Form */}
-                  <div className="border-t pt-6 border-zinc-200/60 dark:border-zinc-800/80">
-                    <h4 className="text-base font-bold mb-2 flex items-center gap-2">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold">
-                        +
-                      </span>
-                      Expand Your Business Area
-                    </h4>
-                    <p className={`text-xs mb-4 ${textMuted}`}>
-                      Select another category from the network to offer custom services there. Category admin review is required.
-                    </p>
-                    
-                    {categories.filter(c => !provider?.categories?.some(pa => (pa.category?._id || pa.category) === c._id)).length === 0 ? (
-                      <div className={`flex items-center gap-3 p-4 rounded-2xl border ${
-                        theme === 'light' ? 'bg-emerald-50/50 border-emerald-100 text-emerald-800' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400'
-                      }`}>
-                        <CheckCircleOutlineOutlinedIcon className="shrink-0" />
-                        <span className="text-sm font-medium">
-                          You have successfully registered for all available service categories in our network!
-                        </span>
-                      </div>
-                    ) : (
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          const categoryId = e.target.categorySelect.value;
-                          if (!categoryId) return;
-                          setActionLoading(true);
-                          try {
-                            const res = await axios.post(
-                              `${API_URL}/provider/profile/apply-category`,
-                              { categoryId },
-                              getHeaders()
-                            );
-                            showNotification(res.data.message || 'Application submitted!');
-                            refetchProfile();
-                          } catch (err) {
-                            showNotification(err.response?.data?.message || err.message);
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
-                      >
-                        <div className="flex-1">
-                          <select
-                            name="categorySelect"
-                            className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                            required
-                          >
-                            <option value="">Select a new category...</option>
-                            {categories
-                              .filter(c => !provider?.categories?.some(pa => (pa.category?._id || pa.category) === c._id))
-                              .map(c => (
-                                <option key={c._id} value={c._id}>
-                                  {capitalizeWords(c.name)}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        <Button type="submit" variant="gradient" className="h-14 px-8 justify-center shrink-0 w-full sm:w-auto font-semibold flex items-center gap-2" title="Apply to Category">
-                          <AddCircleOutlineOutlinedIcon fontSize="small" />
-                          Apply to Category
-                        </Button>
-                      </form>
-                    )}
-                  </div>
-                </div>
-
-                {/* Add Service Section */}
-                <div className={`dashboard-card border rounded-[28px] p-6 md:p-8 ${cardTheme} shadow-xl relative overflow-hidden`}>
-                  <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
-                  
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold tracking-tight mb-1">Create Custom Service Offerings</h3>
-                    <p className={`text-sm ${textMuted}`}>
-                      Design a custom service title, base price, and details to feature on the public catalog.
-                    </p>
-                  </div>
-
-                  {/* KYC Pending Warning Banner */}
-                  {categories.filter(c => provider?.categories?.some(cat => (cat.category?._id || cat.category) === c._id && cat.status === 'approved')).length === 0 ? (
-                    <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm mb-4 leading-relaxed">
-                      ⚠️ <strong>KYC Verification Required:</strong> You cannot list any service offerings until at least one of your category applications is reviewed and approved by an administrator. Please monitor your status panel above.
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-8">
-                        <label className="mb-2 block text-sm font-bold uppercase tracking-wider text-zinc-500">
-                          Quick Add Standard Service
-                        </label>
-                        <select
-                          className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (!e.target.value) return;
-                            const srv = defaultServices.find(s => s.name === e.target.value);
-                            if (srv) {
-                              setCustomServiceName(srv.name);
-                              setCustomServiceDesc(srv.description);
-                              setCustomServiceImage(srv.image);
-                              const matchedCat = categories.find(c => c.name.toLowerCase() === srv.category.toLowerCase());
-                              if (matchedCat) setCustomServiceCategory(matchedCat._id);
-                              
-                              // Reset select to default after selection so they can select again if needed
-                              e.target.value = "";
-                            }
-                          }}
-                        >
-                          <option value="" disabled>Select a standard service to auto-fill...</option>
-                          {defaultServices.map((srv, idx) => (
-                            <option key={idx} value={srv.name}>
-                              {srv.name} ({srv.category})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="mb-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                        <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Or define it manually</h4>
-                      </div>
-
-                      <form onSubmit={handleAddServiceSubmit} className="flex flex-col gap-6">
-                      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                            Service Title *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Premium Deep Sofa Cleaning"
-                            value={customServiceName}
-                            onChange={(e) => setCustomServiceName(e.target.value)}
-                            className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                            required
-                          />
-                          {suggestedServiceNames.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              <span className={`text-[10px] font-semibold ${textMuted} uppercase self-center`}>Suggestions:</span>
-                              {suggestedServiceNames.map(word => (
-                                <button
-                                  key={word}
-                                  type="button"
-                                  onClick={() => setCustomServiceName(customServiceName ? `${customServiceName} ${capitalizeWords(word)}` : capitalizeWords(word))}
-                                  className={`rounded-full border px-2 py-0.5 text-xs font-medium transition duration-200 ${
-                                    theme === 'light'
-                                      ? 'border-zinc-200 bg-white text-zinc-700 hover:border-amber-500 hover:text-amber-500'
-                                      : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-amber-500 hover:text-amber-500'
-                                  }`}
-                                >
-                                  {capitalizeWords(word)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                            Service Category *
-                          </label>
-                          <select
-                            value={customServiceCategory}
-                            onChange={(e) => setCustomServiceCategory(e.target.value)}
-                            className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                            required
-                          >
-                            <option value="">Choose category...</option>
-                            {categories
-                              .filter(c => provider?.categories?.some(cat => (cat.category?._id || cat.category) === c._id && cat.status === 'approved'))
-                              .map((c) => (
-                                <option key={c._id} value={c._id}>
-                                  {capitalizeWords(c.name)}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        <div className="sm:col-span-2 lg:col-span-1">
-                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                            Short Description *
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Briefly explain what is included..."
-                            value={customServiceDesc}
-                            onChange={(e) => setCustomServiceDesc(e.target.value)}
-                            className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 border-t pt-5 border-zinc-200/60 dark:border-zinc-800/80">
-                        <div className="w-full sm:w-48">
-                          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                            Your Pricing (₹) *
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="e.g. 500"
-                            value={customPrice}
-                            onChange={(e) => setCustomPrice(e.target.value)}
-                            className={`w-full rounded-2xl border p-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 ${inputBg}`}
-                            required
-                          />
-                        </div>
-
-                        <Button
-                          type="submit"
-                          variant="gradient"
-                          disabled={actionLoading}
-                          className="h-14 px-8 justify-center shrink-0 w-full sm:w-auto font-semibold flex items-center gap-2"
-                          title={actionLoading ? 'Adding...' : 'Add Service to Offerings'}
-                        >
-                          <AddCircleOutlineOutlinedIcon fontSize="small" />
-                          {actionLoading ? 'Adding...' : 'Add Service'}
-                        </Button>
-                      </div>
-                    </form>
-                    </>
-                  )}
-                </div>
-
-                {/* Current Services List */}
-                <div className={`dashboard-card border rounded-[28px] p-6 md:p-8 ${cardTheme} shadow-xl`}>
-                  <h3 className="text-2xl font-bold tracking-tight mb-4">Your Offered Services</h3>
-
-                  {/* Search and Sort controls */}
-                  {myServices.length > 0 && (
-                    <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                      <input
-                        type="text"
-                        placeholder="Search offered services..."
-                        value={serviceSearch}
-                        onChange={(e) => setServiceSearch(e.target.value)}
-                        className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                      />
-                      <div className="flex items-center gap-3">
-                        <select
-                          value={serviceSort}
-                          onChange={(e) => setServiceSort(e.target.value)}
-                          className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                        >
-                          <option value="nameAsc">Name: A to Z</option>
-                          <option value="nameDesc">Name: Z to A</option>
-                          <option value="priceLow">Price: Low to High</option>
-                          <option value="priceHigh">Price: High to Low</option>
-                        </select>
-
-                        {/* Layout Switcher */}
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
-                          <button
-                            onClick={() => servicesView.toggleView()}
-                            className={`p-2 rounded-lg transition-colors ${
-                              servicesView.view === 'table'
-                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                            }`}
-                            title="Table View"
-                          >
-                            <TableRowsOutlinedIcon fontSize="small" />
-                          </button>
-                          <button
-                            onClick={() => servicesView.toggleView()}
-                            className={`p-2 rounded-lg transition-colors ${
-                              servicesView.view === 'card'
-                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                            }`}
-                            title="Card View"
-                          >
-                            <GridViewOutlinedIcon fontSize="small" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {loadingServices ? (
-                    <div className="flex items-center gap-3 py-6 justify-center text-sm">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-                      <span className={textMuted}>Loading offered services...</span>
-                    </div>
-                  ) : myServices.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <p className={`m-0 text-base font-semibold ${textMuted}`}>No services in your collection yet.</p>
-                      <p className="text-xs text-zinc-400 mt-1">Design services using the form above to add them here.</p>
-                    </div>
-                  ) : filteredAndSortedServices.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <p className={`m-0 text-base font-semibold ${textMuted}`}>No services match your search filters.</p>
-                    </div>
-                  ) : servicesView.view === 'table' ? (
-                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                      <table className="w-full border-collapse text-left text-sm min-w-[700px]">
-                        <thead>
-                          <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
-                            <th className="p-4 font-semibold">Service Name</th>
-                            <th className="p-4 font-semibold">Category</th>
-                            <th className="p-4 font-semibold">Description</th>
-                            <th className="p-4 font-semibold">Base Price</th>
-                            <th className="p-4 font-semibold">Your Price</th>
-                            <th className="p-4 font-semibold text-center">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredAndSortedServices.map((ps) => (
-                            <tr key={ps._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
-                              <td className="p-4 font-bold text-zinc-900 dark:text-zinc-50">
-                                {capitalizeWords(ps.service?.serviceName)}
-                              </td>
-                              <td className="p-4">
-                                {ps.service?.category && (
-                                  <span className="inline-flex text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                    {ps.service.category.name ? capitalizeWords(ps.service.category.name) : 'General'}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-4 max-w-[250px] truncate" title={ps.service?.description}>
-                                {capitalize(ps.service?.description)}
-                              </td>
-                              <td className="p-4 text-zinc-400 font-medium">₹{ps.service?.basePrice}</td>
-                              <td className="p-4 font-bold text-amber-500">₹{ps.price}</td>
-                              <td className="p-4 text-center">
-                                <button
-                                  onClick={() => handleRemoveService(ps._id)}
-                                  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-2 rounded-full border border-red-200 dark:border-red-900/50 transition-colors shrink-0"
-                                  title="Remove Service"
-                                >
-                                  <DeleteOutlineOutlinedIcon fontSize="small" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      {filteredAndSortedServices.map((ps) => (
-                        <div
-                          key={ps._id}
-                          className={`p-5 rounded-2xl border flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] hover:shadow-md ${
-                            theme === 'light'
-                              ? 'border-zinc-200 bg-zinc-50/50 hover:bg-white hover:border-zinc-300'
-                              : 'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900 hover:border-zinc-700'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <div>
-                                <h4 className="font-bold text-lg m-0 text-zinc-900 dark:text-zinc-50 leading-snug">
-                                  {capitalizeWords(ps.service?.serviceName)}
-                                </h4>
-                                {ps.service?.category && (
-                                  <span className="inline-flex text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 mt-2">
-                                    {ps.service.category.name ? capitalizeWords(ps.service.category.name) : 'General'}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xl font-bold text-amber-500 shrink-0">
-                                ₹{ps.price}
-                              </span>
-                            </div>
-                            <p className={`text-xs leading-relaxed m-0 mt-2 ${textMuted} line-clamp-3 mb-4`}>
-                              {capitalize(ps.service?.description)}
-                            </p>
-                          </div>
-
-                          <div className="flex justify-between items-center border-t pt-4 border-zinc-200/60 dark:border-zinc-800/80">
-                            <span className="text-xs text-zinc-400 font-medium">
-                              Base Price: ₹{ps.service?.basePrice}
-                            </span>
-                            <button
-                              onClick={() => handleRemoveService(ps._id)}
-                              className="text-red-500 hover:bg-red-50 p-2 rounded-full border border-red-200 transition-colors shrink-0"
-                              title="Remove Service"
-                            >
-                              <DeleteOutlineOutlinedIcon fontSize="small" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ─── TAB: REVIEWS ─── */}
-            {activeTab === 'reviews' && (
-              <div className="flex flex-col gap-6">
-                <div className={`dashboard-card border ${cardTheme}`}>
-                  <h3 className="text-xl font-bold mb-4">Customer Reviews</h3>
-
-                  {/* Search and Sort controls */}
-                  {reviews.length > 0 && (
-                    <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                      <input
-                        type="text"
-                        placeholder="Search reviews by customer name, rating or comment..."
-                        value={reviewSearch}
-                        onChange={(e) => setReviewSearch(e.target.value)}
-                        className={`flex-1 rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                      />
-                      <div className="flex items-center gap-3">
-                        <select
-                          value={reviewSort}
-                          onChange={(e) => setReviewSort(e.target.value)}
-                          className={`flex-1 sm:flex-initial rounded-2xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                        >
-                          <option value="dateNewest">Date: Newest First</option>
-                          <option value="dateOldest">Date: Oldest First</option>
-                          <option value="ratingHigh">Rating: Highest First</option>
-                          <option value="ratingLow">Rating: Lowest First</option>
-                        </select>
-
-                        {/* Layout Switcher */}
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
-                          <button
-                            onClick={() => reviewsView.toggleView()}
-                            className={`p-2 rounded-lg transition-colors ${
-                              reviewsView.view === 'table'
-                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                            }`}
-                            title="Table View"
-                          >
-                            <TableRowsOutlinedIcon fontSize="small" />
-                          </button>
-                          <button
-                            onClick={() => reviewsView.toggleView()}
-                            className={`p-2 rounded-lg transition-colors ${
-                              reviewsView.view === 'card'
-                                ? 'bg-white text-amber-500 shadow-sm dark:bg-zinc-700'
-                                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
-                            }`}
-                            title="Card View"
-                          >
-                            <GridViewOutlinedIcon fontSize="small" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {reviews.length === 0 ? (
-                    <p className={`py-6 text-center ${textMuted}`}>No reviews received yet.</p>
-                  ) : filteredAndSortedReviews.length === 0 ? (
-                    <p className={`py-6 text-center ${textMuted}`}>No reviews match your filters.</p>
-                  ) : reviewsView.view === 'table' ? (
-                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                      <table className="w-full border-collapse text-left text-sm min-w-[700px]">
-                        <thead>
-                          <tr className={`border-b ${theme === 'light' ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-900 border-zinc-800'}`}>
-                            <th className="p-4 font-semibold">Customer</th>
-                            <th className="p-4 font-semibold">Rating</th>
-                            <th className="p-4 font-semibold">Review</th>
-                            <th className="p-4 font-semibold">Booking ID</th>
-                            <th className="p-4 font-semibold">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredAndSortedReviews.map((r) => (
-                            <tr key={r._id} className={`border-b ${theme === 'light' ? 'border-zinc-100 hover:bg-zinc-50' : 'border-zinc-800/50 hover:bg-zinc-800/20'}`}>
-                              <td className="p-4 font-semibold">
-                                {r.customer ? capitalizeWords(`${r.customer.firstName} ${r.customer.lastName}`) : 'Anonymous'}
-                              </td>
-                              <td className="p-4">
-                                <div className="flex gap-0.5 text-amber-500">
-                                  {Array.from({ length: r.rating }).map((_, idx) => (
-                                    <StarRateOutlinedIcon key={idx} style={{ fontSize: 16 }} />
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="p-4 italic text-zinc-600 dark:text-zinc-300">
-                                "{capitalize(r.review) || 'No comment text provided'}"
-                              </td>
-                              <td className="p-4 font-mono text-xs">{r.booking?.bookingNumber || 'N/A'}</td>
-                              <td className="p-4 text-xs text-zinc-400">
-                                {new Date(r.createdAt).toLocaleDateString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {filteredAndSortedReviews.map((r) => (
-                        <div key={r._id} className={`p-5 rounded-2xl border ${theme === 'light' ? 'border-zinc-200 bg-zinc-50' : 'border-zinc-800 bg-zinc-800/40'} flex flex-col justify-between`}>
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-semibold text-sm">
-                                {r.customer ? capitalizeWords(`${r.customer.firstName} ${r.customer.lastName}`) : 'Anonymous'}
-                              </span>
-                              <div className="flex gap-0.5 text-amber-500">
-                                {Array.from({ length: r.rating }).map((_, idx) => (
-                                  <StarRateOutlinedIcon key={idx} style={{ fontSize: 16 }} />
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-sm italic text-zinc-600 dark:text-zinc-300">
-                              "{capitalize(r.review) || 'No comment text provided'}"
-                            </p>
-                          </div>
-                          <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-xs text-zinc-400">
-                            <span>Booking: {r.booking?.bookingNumber || 'N/A'}</span>
-                            <span>{new Date(r.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ─── TAB: BUSINESS PROFILE ─── */}
-            {activeTab === 'profile' && (
-              <div className={`dashboard-card border ${cardTheme} max-w-4xl mx-auto`}>
-                <h3 className="text-2xl font-bold mb-6">Business settings</h3>
-                
-                <form onSubmit={handleProfileSubmit}>
-                  {/* Photo Edit */}
-                  <div className="mb-8 flex flex-col items-center gap-3">
-                    <div className="relative">
-                      <div className="h-28 w-28 overflow-hidden rounded-full border-4 border-amber-500/20 bg-zinc-100">
-                        {profileForm.profileImage ? (
-                          <img
-                            className="h-full w-full object-cover"
-                            src={profileForm.profileImage}
-                            alt="profile"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-white">
-                            <PersonOutlineOutlinedIcon fontSize="large" />
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white shadow-md hover:bg-amber-600 transition"
-                        onClick={() => fileInputRef.current.click()}
-                        title="Upload logo"
-                      >
-                        <CameraAltOutlinedIcon style={{ fontSize: 16 }} />
-                      </button>
-                    </div>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                    />
-
-                    {uploadingImage && (
-                      <p className="text-xs font-semibold text-amber-500">Uploading photo...</p>
-                    )}
-                    {!uploadingImage && (
-                      <p className={`text-xs ${textMuted}`}>Click camera icon to change profile picture</p>
-                    )}
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {/* User profile details */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">First Name</label>
-                      <Input
-                        name="firstName"
-                        value={profileForm.firstName}
-                        onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Last Name</label>
-                      <Input
-                        name="lastName"
-                        value={profileForm.lastName}
-                        onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Phone</label>
-                      <Input
-                        name="phone"
-                        value={profileForm.phone}
-                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-
-                    {/* Business Info */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Business Name</label>
-                      <Input
-                        name="businessName"
-                        value={profileForm.businessName}
-                        onChange={(e) => setProfileForm({ ...profileForm, businessName: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Service Category</label>
-                      <select
-                        name="category"
-                        value={profileForm.category}
-                        onChange={(e) => setProfileForm({ ...profileForm, category: e.target.value })}
-                        className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat._id}>
-                            {capitalizeWords(cat.name)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Years of Experience</label>
-                      <Input
-                        type="number"
-                        name="experience"
-                        value={profileForm.experience}
-                        onChange={(e) => setProfileForm({ ...profileForm, experience: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    
-                    {/* Address details */}
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Country</label>
-                      <Input
-                        name="country"
-                        value={profileForm.country}
-                        onChange={(e) => setProfileForm({ ...profileForm, country: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">State</label>
-                      <Input
-                        name="state"
-                        value={profileForm.state}
-                        onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">City</label>
-                      <Input
-                        name="city"
-                        value={profileForm.city}
-                        onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Pincode</label>
-                      <Input
-                        name="pincode"
-                        value={profileForm.pincode}
-                        onChange={(e) => setProfileForm({ ...profileForm, pincode: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Full Address</label>
-                      <Input
-                        name="fullAddress"
-                        value={profileForm.fullAddress}
-                        onChange={(e) => setProfileForm({ ...profileForm, fullAddress: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Skills (Comma separated list)</label>
-                      <Input
-                        name="skills"
-                        placeholder="Plumbing, Leak Repair, Pipe Fitting"
-                        value={profileForm.skills}
-                        onChange={(e) => setProfileForm({ ...profileForm, skills: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Service Areas (Comma separated list)</label>
-                      <Input
-                        name="serviceAreas"
-                        placeholder="Downtown, North side, Green Hills"
-                        value={profileForm.serviceAreas}
-                        onChange={(e) => setProfileForm({ ...profileForm, serviceAreas: e.target.value })}
-                        className={inputBg}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-zinc-500">Business Description</label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        value={profileForm.description}
-                        onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })}
-                        className={`w-full rounded-2xl border p-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${inputBg}`}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex justify-end">
-                    <Button
-                      type="submit"
-                      variant="gradient"
-                      className="px-8 flex items-center gap-2"
-                      disabled={actionLoading}
-                      title={actionLoading ? 'Saving...' : 'Save Settings'}
-                    >
-                      <SaveOutlinedIcon fontSize="small" />
-                      {actionLoading ? 'Saving...' : 'Save Settings'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </>
-        )}
-
-      </main>
+        </div>
+      )}
 
       {/* OTP Verification Modal */}
       {otpModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl ${theme === 'light' ? 'bg-white' : 'bg-zinc-900 border border-zinc-800'}`}>
-            <h3 className="text-xl font-bold mb-2">OTP Verification Required</h3>
-            <p className={`text-sm mb-6 ${theme === 'light' ? 'text-zinc-600' : 'text-zinc-400'}`}>
-              Please enter the OTP provided by the user to {otpModal.targetStatus === 'started' ? 'start' : 'complete'} this job.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-up">
+          <div className={`w-full max-w-sm rounded-[16px] p-6 shadow-2xl ${theme === 'light' ? 'bg-white' : 'bg-zinc-900 border border-zinc-800'}`}>
+            <h3 className="text-base font-extrabold mb-1">OTP Verification Required</h3>
+            <p className={`text-xs mb-5 ${theme === 'light' ? 'text-zinc-650' : 'text-zinc-400'}`}>
+              Please enter the OTP provided by the client to {otpModal.targetStatus === 'started' ? 'start' : 'complete'} this service.
             </p>
             
             <input
@@ -1823,30 +1935,101 @@ const ProviderDashborad = () => {
               placeholder="Enter 4-digit OTP"
               value={otpModal.otp}
               onChange={(e) => setOtpModal(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-              className={`w-full mb-6 text-center text-2xl tracking-[0.5em] font-mono rounded-xl border px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500/20 ${theme === 'light' ? 'bg-zinc-50 text-zinc-900' : 'bg-zinc-800 text-zinc-100 border-zinc-700'}`}
+              className={`w-full mb-6 text-center text-xl tracking-[0.5em] font-mono rounded-xl border px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#16A34A] ${theme === 'light' ? 'bg-zinc-50 text-zinc-900 border-zinc-200' : 'bg-zinc-800 text-zinc-100 border-zinc-700'}`}
             />
             
-            <div className="flex gap-3 mt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="flex-1 py-2 border border-zinc-250 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-bold rounded-lg cursor-pointer text-center text-zinc-650 dark:text-zinc-350"
                 onClick={() => setOtpModal({ show: false, bookingId: null, targetStatus: '', otp: '' })}
               >
                 Cancel
-              </Button>
-              <Button
-                variant="gradient"
-                className="flex-1"
+              </button>
+              <button
+                type="button"
                 disabled={actionLoading || otpModal.otp.length !== 4}
+                className="flex-1 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-lg cursor-pointer text-center disabled:opacity-50"
                 onClick={() => handleUpdateStatus(otpModal.bookingId, otpModal.targetStatus, otpModal.otp)}
               >
-                Verify & {otpModal.targetStatus === 'started' ? 'Start' : 'Complete'}
-              </Button>
+                Confirm OTP
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Invoice Generator Modal Dialog */}
+      {invoiceModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-up">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-2xl flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+                <h4 className="text-sm font-black text-zinc-800 dark:text-zinc-200">Invoice Statement</h4>
+                <button
+                  onClick={() => setInvoiceModal(prev => ({ ...prev, show: false }))}
+                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  <CloseOutlinedIcon style={{ fontSize: 16 }} />
+                </button>
+              </div>
+
+              {/* Body details */}
+              <div className="space-y-3 text-xs mb-6">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Booking Reference:</span>
+                  <span className="font-mono font-bold text-zinc-800 dark:text-zinc-250">{invoiceModal.bookingNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Customer:</span>
+                  <span className="font-bold text-zinc-800 dark:text-zinc-250">{invoiceModal.customerName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Service Task:</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{invoiceModal.serviceName}</span>
+                </div>
+                
+                <hr className="border-zinc-100 dark:border-zinc-800 my-2" />
+                
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Base Cost:</span>
+                  <span className="font-semibold">₹{invoiceModal.amount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">GST Tax (18%):</span>
+                  <span className="font-semibold text-zinc-550">₹{invoiceModal.tax}</span>
+                </div>
+                
+                <hr className="border-zinc-100 dark:border-zinc-800 my-2" />
+                
+                <div className="flex justify-between text-sm font-black text-[#16A34A]">
+                  <span>Total Bill Amount:</span>
+                  <span>₹{invoiceModal.total}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 border-t pt-4 border-zinc-100 dark:border-zinc-800">
+              <button
+                onClick={() => setInvoiceModal(prev => ({ ...prev, show: false }))}
+                className="flex-1 py-2.5 border border-zinc-200 text-xs font-bold rounded-xl cursor-pointer text-center text-zinc-650"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  alert("Invoice PDF created and emailed to customer!")
+                  setInvoiceModal(prev => ({ ...prev, show: false }))
+                }}
+                className="flex-1 py-2.5 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer text-center"
+              >
+                Email Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

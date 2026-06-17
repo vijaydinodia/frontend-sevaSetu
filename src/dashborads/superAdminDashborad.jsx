@@ -582,9 +582,9 @@ const SuperAdminDashborad = () => {
       <SuperAdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="main-col p-5 md:p-8">
-        <header className="mb-6 flex flex-col gap-4 rounded-[28px] bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+        <header className="mb-6 flex flex-col gap-4 rounded-[28px] bg-card-bg p-5 border border-border-custom shadow-sm md:flex-row md:items-center md:justify-between transition-colors duration-200">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-white">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#16A34A] text-white">
               {profile?.profileImage ? (
                 <img className="h-full w-full rounded-2xl object-cover" src={profile.profileImage} alt="profile" loading="lazy" />
               ) : (
@@ -592,8 +592,8 @@ const SuperAdminDashborad = () => {
               )}
             </div>
             <div>
-              <p className="m-0 text-sm font-semibold text-zinc-500">Welcome Super Admin</p>
-              <h1 className="m-0 text-2xl font-semibold text-black">{getUserName(profile)}</h1>
+              <p className="m-0 text-sm font-semibold text-text-muted">Welcome Super Admin</p>
+              <h1 className="m-0 text-2xl font-semibold text-text-main">{getUserName(profile)}</h1>
             </div>
           </div>
 

@@ -8,9 +8,9 @@ const buttonClass = cva(
     variants: {
       variant: {
         default: 'bg-zinc-950 text-white hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200',
-        gradient: 'bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white shadow-lg dark:shadow-none',
-        outline: 'border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800',
-        ghost: 'bg-transparent text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800',
+        gradient: 'bg-[#16A34A] text-white hover:bg-[#15803D] shadow-sm hover:shadow-md hover:shadow-green-600/10 transition-all duration-200',
+        outline: 'border border-[#E5E7EB] bg-white text-[#111827] hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800',
+        ghost: 'bg-transparent text-[#111827] hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800',
       },
       size: {
         default: 'h-11 px-5',

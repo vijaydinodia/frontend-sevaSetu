@@ -1,11 +1,27 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --color-brand-green: #16a34a;
+  --color-brand-green-hover: #15803d;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-border-custom: var(--border-color);
+  --color-shell-bg: var(--bg-shell);
+  --color-card-bg: var(--bg-card);
+  --color-input-bg: var(--bg-input);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+}
+
 :root {
-  --bg-shell: #f8ebe6;
-  --bg-card: #ffffff;
-  --text-main: #18181b; /* zinc-900 */
-  --text-muted: #52525b; /* zinc-600 */
-  --border-color: rgba(0, 0, 0, 0.08);
+  --bg-shell: #ffffff;
+  --bg-card: #f9fafb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
   --bg-input: #ffffff;
 }
 
@@ -151,4 +167,19 @@ html, body, #root {
 .dark header {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
