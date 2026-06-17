@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  --bg-shell: #f8ebe6;
+  --bg-card: #ffffff;
+  --text-main: #18181b; /* zinc-900 */
+  --text-muted: #52525b; /* zinc-600 */
+  --border-color: rgba(0, 0, 0, 0.08);
+  --bg-input: #ffffff;
+}
+
+.dark {
+  --bg-shell: #09090b; /* zinc-950 */
+  --bg-card: #18181b; /* zinc-900 */
+  --text-main: #f4f4f5; /* zinc-100 */
+  --text-muted: #a1a1aa; /* zinc-400 */
+  --border-color: #27272a; /* zinc-800 */
+  --bg-input: #27272a; /* zinc-800 */
+}
+
+/* ── Base reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-shell);
+  color: var(--text-main);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Dashboard layout ── */
+/* The outer shell: sidebar + main side by side, full viewport height */
+.dashboard-shell {
+  display: flex;
+  height: 100vh;           /* lock to viewport height */
+  overflow: hidden;        /* prevent outer scroll */
+  background-color: var(--bg-shell);
+  color: var(--text-main);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Sidebar column: never shrinks, scrolls on its own */
+.sidebar-col {
+  flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: sticky;
+  top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+/* Main content column: grows to fill, scrolls independently */
+.main-col {
+  flex: 1;
+  min-width: 0;          /* allow shrink below content width */
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Responsive table wrapper ── */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Simple card ── */
+.dashboard-card {
+  background: var(--bg-card);
+  border-radius: 28px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px var(--border-color);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* ── Dashboard page padding ── */
+.dashboard-page {
+  padding: 1.25rem;
+  background-color: var(--bg-shell);
+  transition: background-color 0.2s;
+}
+@media (min-width: 768px) {
+  .dashboard-page { padding: 2rem; }
+}
+
+/* ── Mobile: sidebar slides in as overlay ── */
+@media (max-width: 767px) {
+  .dashboard-shell {
+    position: relative;
+  }
+  .sidebar-col {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    height: 100vh;
+  }
+}
+
+/* ── Dark mode helper overrides for Tailwind utility color classes ── */
+.dark .bg-white {
+  background-color: var(--bg-card) !important;
+}
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
+  background-color: var(--bg-input) !important;
+}
+.dark .bg-\[\#f8ebe6\] {
+  background-color: var(--bg-shell) !important;
+}
+.dark .border-zinc-200,
+.dark .border-zinc-100 {
+  border-color: var(--border-color) !important;
+}
+.dark .text-black,
+.dark .text-zinc-950,
+.dark .text-zinc-900 {
+  color: var(--text-main) !important;
+}
+.dark .text-zinc-700,
+.dark .text-zinc-600,
+.dark .text-zinc-500,
+.dark .text-zinc-400 {
+  color: var(--text-muted) !important;
+}
+.dark thead {
+  background-color: var(--bg-shell) !important;
+  color: var(--text-main) !important;
+}
+.dark table {
+  border-color: var(--border-color) !important;
+}
+.dark th, .dark td {
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+.dark input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+.dark select,
+.dark textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+.dark header {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
