@@ -49,6 +49,7 @@ const SuperAdminDashborad = () => {
   const [bookings, setBookings] = useState([])
   const [reviews, setReviews] = useState([])
   const [locations, setLocations] = useState([])
+  const [dashboardStats, setDashboardStats] = useState(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
@@ -266,6 +267,7 @@ const SuperAdminDashborad = () => {
         bookingRes,
         reviewRes,
         locationRes,
+        statsRes,
       ] = await Promise.all([
         axios.get(`${API_URL}/superadmin/profile`, getHeaders()),
         axios.get(`${API_URL}/superadmin/user/getall`, getHeaders()),
@@ -275,6 +277,7 @@ const SuperAdminDashborad = () => {
         axios.get(`${API_URL}/superadmin/booking/getall`, getHeaders()),
         axios.get(`${API_URL}/superadmin/review/getall`, getHeaders()),
         axios.get(`${API_URL}/location/getall`, getHeaders()),
+        axios.get(`${API_URL}/superadmin/dashboard-stats`, getHeaders()),
       ])
 
       const profileUser = profileRes.data.data?.user || profileRes.data.data || savedUser
@@ -287,6 +290,7 @@ const SuperAdminDashborad = () => {
       setBookings(bookingRes.data.data || [])
       setReviews(reviewRes.data.data || [])
       setLocations(locationRes.data.data || [])
+      setDashboardStats(statsRes.data.data || null)
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
       if (error.response?.status === 401) {
@@ -566,15 +570,18 @@ const SuperAdminDashborad = () => {
     }
   }
 
-  const statCards = [
-    { title: 'Users', value: users.length, icon: <GroupOutlinedIcon />, tab: 'users' },
-    { title: 'Admins', value: admins.length, icon: <AdminPanelSettingsOutlinedIcon />, tab: 'admins' },
-    { title: 'Providers', value: providers.length, icon: <WorkOutlineOutlinedIcon />, tab: 'providers' },
-    { title: 'Categories', value: categories.length, icon: <CategoryOutlinedIcon />, tab: 'categories' },
-    { title: 'Bookings', value: bookings.length, icon: <CalendarMonthOutlinedIcon />, tab: 'bookings' },
-    { title: 'Reviews', value: reviews.length, icon: <RateReviewOutlinedIcon />, tab: 'reviews' },
-    { title: 'Locations', value: locations.length, icon: <LocationOnOutlinedIcon />, tab: 'locations' },
-  ]
+  const statCards = dashboardStats ? [
+    { title: 'Users', value: dashboardStats.users || 0, icon: <GroupOutlinedIcon />, tab: 'users' },
+    { title: 'Admins', value: dashboardStats.admins || 0, icon: <AdminPanelSettingsOutlinedIcon />, tab: 'admins' },
+    { title: 'Providers', value: dashboardStats.providers || 0, icon: <WorkOutlineOutlinedIcon />, tab: 'providers' },
+    { title: 'Categories', value: dashboardStats.categories || 0, icon: <CategoryOutlinedIcon />, tab: 'categories' },
+    { title: 'Bookings', value: dashboardStats.bookings || 0, icon: <CalendarMonthOutlinedIcon />, tab: 'bookings' },
+    { title: 'Reviews', value: dashboardStats.reviews || 0, icon: <RateReviewOutlinedIcon />, tab: 'reviews' },
+    { title: 'Locations', value: dashboardStats.locations || 0, icon: <LocationOnOutlinedIcon />, tab: 'locations' },
+  ] : []
+
+  const recentBookings = dashboardStats?.recentBookings || []
+  const recentProviders = dashboardStats?.recentProviders || []
 
   return (
     <>
@@ -640,6 +647,153 @@ const SuperAdminDashborad = () => {
                   <h3 className="m-0 text-3xl font-semibold text-black">{item.value}</h3>
                 </button>
               ))}
+            </div>
+
+            {/* Quick overview layout similar to Admin Dashboard */}
+            <div className="grid gap-5 lg:grid-cols-2 mt-6">
+              {/* Chart */}
+              {dashboardStats?.chartData && (
+                <Card className="p-5 lg:col-span-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-zinc-900">Platform Revenue & Bookings Trend</h3>
+                      <p className="text-xs text-zinc-400">6-Month historical data</p>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-semibold">
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#16A34A] rounded-full" /> Revenue (₹)</span>
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-indigo-500 rounded-full" /> Bookings</span>
+                    </div>
+                  </div>
+                  
+                  <div className="relative pt-4 w-full">
+                    <svg viewBox="0 0 500 200" className="w-full h-44 overflow-visible">
+                      <defs>
+                        <linearGradient id="superChartGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#16A34A" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <line x1="30" y1="20" x2="480" y2="20" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="70" x2="480" y2="70" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="120" x2="480" y2="120" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="170" x2="480" y2="170" stroke="#E5E7EB" strokeWidth="0.5" />
+                      
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} 170 L ` + dashboardStats.chartData.map(p => `${p.x} ${p.yRev}`).join(' L ') + ` L ${dashboardStats.chartData[dashboardStats.chartData.length-1].x} 170 Z`}
+                          fill="url(#superChartGrad)"
+                        />
+                      )}
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yRev} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yRev}`).join(' ')}
+                          stroke="#16A34A"
+                          strokeWidth="3"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      )}
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yBook} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yBook}`).join(' ')}
+                          stroke="#6366F1"
+                          strokeWidth="2.5"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeDasharray="1"
+                        />
+                      )}
+                      {dashboardStats.chartData.map((p, idx) => (
+                        <g key={idx}>
+                          <circle cx={p.x} cy={p.yRev} r="4" fill="#16A34A" />
+                          <circle cx={p.x} cy={p.yBook} r="4" fill="#6366F1" />
+                          <text x={p.x} y="190" textAnchor="middle" fontSize="10" fill="#9CA3AF">{p.monthName}</text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </Card>
+              )}
+
+              {/* Recent Bookings */}
+              <Card className="p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="m-0 text-lg font-semibold text-black">Recent Bookings</h2>
+                  <button
+                    className="text-xs font-semibold text-zinc-500 hover:text-black"
+                    onClick={() => setActiveTab('bookings')}
+                  >
+                    View all →
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {recentBookings.length === 0 && (
+                    <p className="text-sm text-zinc-400">No recent bookings.</p>
+                  )}
+                  {recentBookings.map((b) => (
+                    <div
+                      key={b._id}
+                      className="flex items-center justify-between rounded-2xl bg-[#f8ebe6] px-4 py-3"
+                    >
+                      <div>
+                        <p className="m-0 text-sm font-semibold text-black">
+                          #{b.bookingNumber || b._id?.slice(-6)}
+                        </p>
+                        <p className="m-0 text-xs text-zinc-500">{b.city || 'N/A'}</p>
+                      </div>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        b.status === 'completed' ? 'bg-emerald-100 text-emerald-600'
+                        : b.status === 'pending' ? 'bg-amber-100 text-amber-600'
+                        : b.status === 'rejected' || b.status === 'cancelled' ? 'bg-red-100 text-red-600'
+                        : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        {capitalize(b.status?.replace(/_/g, ' ') || 'N/A')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Recent Providers */}
+              <Card className="p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="m-0 text-lg font-semibold text-black">Recent Providers</h2>
+                  <button
+                    className="text-xs font-semibold text-zinc-500 hover:text-black"
+                    onClick={() => setActiveTab('providers')}
+                  >
+                    View all →
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {recentProviders.length === 0 && (
+                    <p className="text-sm text-zinc-400">No providers yet.</p>
+                  )}
+                  {recentProviders.map((p) => (
+                    <div
+                      key={p._id}
+                      className="flex items-center gap-3 rounded-2xl bg-[#f8ebe6] px-4 py-3"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-black text-xs font-bold text-white">
+                        {(p?.user?.firstName?.[0] || 'P').toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="m-0 truncate text-sm font-semibold text-black">
+                          {getUserName(p)}
+                        </p>
+                        <p className="m-0 truncate text-xs text-zinc-500">{p.businessName || 'N/A'}</p>
+                      </div>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        p.kycStatus === 'approved' ? 'bg-emerald-100 text-emerald-600'
+                        : p.kycStatus === 'pending' ? 'bg-amber-100 text-amber-600'
+                        : 'bg-red-100 text-red-600'
+                      }`}>
+                        {capitalize(p.kycStatus || 'N/A')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           </div>
         )}

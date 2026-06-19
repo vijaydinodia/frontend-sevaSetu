@@ -292,46 +292,137 @@ const ProviderDetails = () => {
               {/* Reviews Section */}
               <div className="mt-4">
                 <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
-                
+
                 {reviews.length === 0 ? (
                   <Card className={`p-8 text-center border ${cardTheme}`}>
-                    <p className={`text-sm font-semibold ${textMuted}`}>No reviews yet for this provider.</p>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                        <StarRateRoundedIcon className="text-amber-400" style={{ fontSize: 36 }} />
+                      </div>
+                      <p className="font-bold text-base">No reviews yet</p>
+                      <p className={`text-sm ${textMuted}`}>Be the first to review this provider after booking!</p>
+                    </div>
                   </Card>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {reviews.map(review => (
-                      <Card key={review._id} className={`p-6 border ${cardTheme}`}>
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            {review.customer?.profileImage ? (
-                              <img src={review.customer.profileImage} alt="Customer" className="w-10 h-10 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold">
-                                {review.customer?.firstName?.[0] || 'U'}
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-bold text-sm">
-                                {capitalizeWords(`${review.customer?.firstName || ''} ${review.customer?.lastName || ''}`)}
-                              </p>
-                              <p className={`text-xs ${textMuted}`}>
-                                {new Date(review.createdAt).toLocaleDateString()}
-                              </p>
+                ) : (() => {
+                  // Compute rating breakdown
+                  const avgRating = providerData.averageRating || (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1)
+                  const starCounts = [5, 4, 3, 2, 1].map(star => ({
+                    star,
+                    count: reviews.filter(r => r.rating === star).length,
+                    pct: Math.round((reviews.filter(r => r.rating === star).length / reviews.length) * 100)
+                  }))
+
+                  return (
+                    <div className="flex flex-col gap-6">
+                      {/* Rating Summary Banner */}
+                      <Card className={`border p-6 ${cardTheme}`}>
+                        <div className="flex flex-col sm:flex-row gap-6 items-center">
+                          {/* Big score */}
+                          <div className="flex flex-col items-center shrink-0">
+                            <span className="text-6xl font-black text-amber-500">{avgRating}</span>
+                            <div className="flex items-center gap-0.5 mt-1">
+                              {[1,2,3,4,5].map(s => (
+                                <StarRateRoundedIcon
+                                  key={s}
+                                  fontSize="small"
+                                  className={parseFloat(avgRating) >= s ? 'text-amber-500' : parseFloat(avgRating) >= s - 0.5 ? 'text-amber-300' : 'text-zinc-300'}
+                                />
+                              ))}
                             </div>
+                            <p className={`text-xs mt-1 font-semibold ${textMuted}`}>{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</p>
                           </div>
-                          <div className="flex items-center gap-0.5 text-amber-500">
-                            <StarRateRoundedIcon fontSize="small" />
-                            <span className="font-bold text-sm">{review.rating}</span>
+
+                          {/* Divider */}
+                          <div className={`hidden sm:block w-px h-24 ${theme === 'light' ? 'bg-zinc-200' : 'bg-zinc-700'}`} />
+
+                          {/* Star breakdown bars */}
+                          <div className="flex-1 w-full space-y-2">
+                            {starCounts.map(({ star, count, pct }) => (
+                              <div key={star} className="flex items-center gap-3">
+                                <div className="flex items-center gap-0.5 shrink-0 w-[60px] justify-end">
+                                  <span className="text-xs font-bold">{star}</span>
+                                  <StarRateRoundedIcon className="text-amber-500" style={{ fontSize: 14 }} />
+                                </div>
+                                <div className={`flex-1 h-2 rounded-full overflow-hidden ${theme === 'light' ? 'bg-zinc-100' : 'bg-zinc-800'}`}>
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-semibold shrink-0 w-8 ${textMuted}`}>{count}</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <p className={`text-sm italic leading-relaxed ${textMuted}`}>
-                          "{review.review}"
-                        </p>
                       </Card>
-                    ))}
-                  </div>
-                )}
+
+                      {/* Review Cards */}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {reviews.map(review => (
+                          <Card key={review._id} className={`p-5 border flex flex-col gap-4 ${cardTheme}`}>
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                {review.customer?.profileImage ? (
+                                  <img
+                                    src={review.customer.profileImage}
+                                    alt="Customer"
+                                    className="w-11 h-11 rounded-full object-cover shrink-0 border-2 border-amber-500/20"
+                                  />
+                                ) : (
+                                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-bold text-base shrink-0">
+                                    {review.customer?.firstName?.[0]?.toUpperCase() || 'U'}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-bold text-sm leading-tight">
+                                    {capitalizeWords(`${review.customer?.firstName || ''} ${review.customer?.lastName || ''}`).trim() || 'Anonymous'}
+                                  </p>
+                                  <p className={`text-[11px] mt-0.5 ${textMuted}`}>
+                                    {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Star rating badge */}
+                              <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl shrink-0">
+                                <StarRateRoundedIcon className="text-amber-500" style={{ fontSize: 15 }} />
+                                <span className="text-sm font-bold text-amber-600">{review.rating}</span>
+                              </div>
+                            </div>
+
+                            {/* Star row */}
+                            <div className="flex items-center gap-0.5">
+                              {[1,2,3,4,5].map(s => (
+                                <StarRateRoundedIcon
+                                  key={s}
+                                  style={{ fontSize: 16 }}
+                                  className={review.rating >= s ? 'text-amber-500' : 'text-zinc-300 dark:text-zinc-600'}
+                                />
+                              ))}
+                            </div>
+
+                            {/* Review text */}
+                            <p className={`text-sm leading-relaxed ${textMuted}`}>
+                              {review.review
+                                ? `"${capitalize(review.review)}"`
+                                : <span className="italic opacity-60">No written feedback.</span>
+                              }
+                            </p>
+
+                            {/* Verified badge */}
+                            <div className="flex items-center gap-1.5 mt-auto">
+                              <VerifiedRoundedIcon className="text-green-500" style={{ fontSize: 14 }} />
+                              <span className="text-[11px] font-semibold text-green-600">Verified Booking</span>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
+
 
             </div>
           )}

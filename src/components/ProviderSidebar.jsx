@@ -10,7 +10,6 @@ import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined'
 import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined'
 import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
 import CurrencyRupeeOutlinedIcon from '@mui/icons-material/CurrencyRupeeOutlined'
-import MessageOutlinedIcon from '@mui/icons-material/MessageOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import ToggleOnIcon from '@mui/icons-material/ToggleOn'
 import ToggleOffIcon from '@mui/icons-material/ToggleOff'
@@ -42,7 +41,6 @@ const ProviderSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pro
     { key: 'services', label: 'Services', icon: <EngineeringOutlinedIcon fontSize="small" /> },
     { key: 'reviews', label: 'Reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
     { key: 'earnings', label: 'Earnings', icon: <CurrencyRupeeOutlinedIcon fontSize="small" /> },
-    { key: 'messages', label: 'Messages', icon: <MessageOutlinedIcon fontSize="small" /> },
     { key: 'notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon fontSize="small" /> },
     { key: 'profile', label: 'Settings', icon: <SettingsOutlinedIcon fontSize="small" /> },
   ]

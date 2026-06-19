@@ -22,12 +22,10 @@ import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined'
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
-import MessageOutlinedIcon from '@mui/icons-material/MessageOutlined'
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined'
 import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
-import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import API_URL from '../api'
 import ProviderSidebar from '../components/ProviderSidebar'
 import Button from '../components/ui/Button'
@@ -106,28 +104,6 @@ const ProviderDashborad = () => {
   // Calendar tab states
   const [calendarDate, setCalendarDate] = useState(new Date())
 
-  // Chats Tab Simulator states
-  const [messagesList, setMessagesList] = useState([
-    { id: 1, sender: "Aarav Sharma", text: "Hello, are you on the way for the kitchen cleaning?", time: "09:15 AM", unread: true },
-    { id: 2, sender: "Sneha Patel", text: "Thank you for the laundry service! It was perfect.", time: "Yesterday", unread: false },
-    { id: 3, sender: "Rohan Verma", text: "Can we reschedule the bathroom cleaning to 3 PM?", time: "2 days ago", unread: false }
-  ])
-  const [selectedChat, setSelectedChat] = useState(1)
-  const [replyText, setReplyText] = useState('')
-  const [chatHistories, setChatHistories] = useState({
-    1: [
-      { sender: "customer", text: "Hello, are you on the way for the kitchen cleaning?", time: "09:15 AM" }
-    ],
-    2: [
-      { sender: "customer", text: "Hi, just wanted to check if you do delicate fabrics too?", time: "Yesterday" },
-      { sender: "provider", text: "Yes, we handle delicate garments with special care.", time: "Yesterday" },
-      { sender: "customer", text: "Thank you for the laundry service! It was perfect.", time: "Yesterday" }
-    ],
-    3: [
-      { sender: "customer", text: "Can we reschedule the bathroom cleaning to 3 PM?", time: "2 days ago" }
-    ]
-  })
-
   // Service management states
   const [myServices, setMyServices] = useState([])
   const [loadingServices, setLoadingServices] = useState(false)
@@ -203,12 +179,22 @@ const ProviderDashborad = () => {
   const { data: bookingsData, loading: bookingsLoading, refetch: refetchBookings } = UseFetch(`${API_URL}/provider/bookings`, { autoFetch: !!token })
   const { data: reviewsData, loading: reviewsLoading, refetch: refetchReviews } = UseFetch(`${API_URL}/provider/reviews`, { autoFetch: !!token })
   const { data: categoriesData, loading: categoriesLoading } = UseFetch(`${API_URL}/provider/categories`, { autoFetch: !!token })
+  const { data: dashboardStatsRes } = UseFetch(`${API_URL}/provider/dashboard-stats`, { autoFetch: !!token })
 
   const provider = profileData?.data
   const userDetails = provider?.user
   const bookings = bookingsData?.data || []
   const reviews = reviewsData?.data || []
   const categories = categoriesData?.data || []
+  const dashboardStats = dashboardStatsRes?.data || null
+
+  // Dashboard Aggregates from API
+  const todayBookingsCount = dashboardStats?.todayBookingsCount || 0
+  const customersCount = dashboardStats?.customersCount || 0
+  const earningsSum = dashboardStats?.earningsSum || 0
+  const ratingScore = dashboardStats?.ratingScore || '0.0'
+  const chartData = dashboardStats?.chartData || []
+  const dynamicAlerts = dashboardStats?.dynamicAlerts || []
 
   // Sync profile details form
   useEffect(() => {
@@ -417,124 +403,7 @@ const ProviderDashborad = () => {
     })
   }
 
-  // Statistics computed directly from database data
-  const totalBookingsCount = bookings.length
-  const todayBookingsCount = bookings.filter(b => new Date(b.bookingDate).toDateString() === new Date().toDateString()).length
-  const customersCount = new Set(bookings.map(b => b.customer?._id).filter(Boolean)).size
-  const earningsSum = bookings.filter(b => b.status === 'completed').reduce((acc, b) => acc + (b.amount || 0), 0)
-  const ratingScore = provider?.averageRating || '0.0'
 
-  // Helper to generate dynamic 6-month chart data
-  const getChartData = () => {
-    const months = []
-    const now = new Date()
-    // Generate last 6 months list
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      months.push({
-        name: d.toLocaleString('default', { month: 'short' }),
-        year: d.getFullYear(),
-        monthIndex: d.getMonth(),
-        revenue: 0,
-        bookingsCount: 0
-      })
-    }
-
-    // Accumulate actual booking data
-    bookings.forEach(b => {
-      const bDate = new Date(b.bookingDate)
-      months.forEach(m => {
-        if (bDate.getFullYear() === m.year && bDate.getMonth() === m.monthIndex) {
-          m.bookingsCount++
-          if (b.status === 'completed') {
-            m.revenue += (b.amount || 0)
-          }
-        }
-      })
-    })
-
-    // Find maximums for scaling (avoid division by 0)
-    const maxRev = Math.max(...months.map(m => m.revenue), 1000)
-    const maxBook = Math.max(...months.map(m => m.bookingsCount), 5)
-
-    // Compute coordinates
-    const points = months.map((m, idx) => {
-      const x = 45 + idx * 80
-      const yRev = 170 - (m.revenue / maxRev) * 140 // scale to height 140 (leaves 30px padding at top)
-      const yBook = 170 - (m.bookingsCount / maxBook) * 140
-      return { x, yRev, yBook, monthName: m.name }
-    })
-
-    // Generate SVG path string for Revenue Line
-    const revPath = points.length > 0 
-      ? `M ${points[0].x} ${points[0].yRev} ` + points.slice(1).map(p => `L ${p.x} ${p.yRev}`).join(' ') 
-      : ''
-    
-    // Generate SVG path string for Revenue Fill Area
-    const revFillPath = points.length > 0 
-      ? `M ${points[0].x} 170 L ` + points.map(p => `${p.x} ${p.yRev}`).join(' L ') + ` L ${points[points.length-1].x} 170 Z`
-      : ''
-
-    // Generate SVG path string for Bookings Line
-    const bookPath = points.length > 0 
-      ? `M ${points[0].x} ${points[0].yBook} ` + points.slice(1).map(p => `L ${p.x} ${p.yBook}`).join(' ') 
-      : ''
-
-    return { points, revPath, revFillPath, bookPath, months }
-  }
-
-  const chartData = getChartData()
-
-  // Helper to generate dynamic notifications from database bookings
-  const getDynamicNotifications = () => {
-    const alerts = []
-    
-    // Sort bookings by creation date or just date to get recent updates
-    const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt || b.bookingDate) - new Date(a.createdAt || a.bookingDate))
-    
-    sortedBookings.slice(0, 5).forEach(b => {
-      const custName = b.customer ? `${b.customer.firstName} ${b.customer.lastName}` : 'Guest User'
-      const servName = capitalizeWords(b.service?.serviceName || b.service?.title || 'service')
-      const timeStr = new Date(b.createdAt || b.bookingDate).toLocaleDateString()
-      
-      if (b.status === 'pending') {
-        alerts.push({
-          text: `New service booking request received from ${custName} for ${servName}.`,
-          time: `Slot: ${b.bookingTime}`,
-          type: 'new'
-        })
-      } else if (b.status === 'completed') {
-        alerts.push({
-          text: `Service request for ${servName} completed successfully for ${custName}.`,
-          time: `Date: ${timeStr}, Amount: ₹${b.amount}`,
-          type: 'payment'
-        })
-      } else if (b.status === 'cancelled') {
-        alerts.push({
-          text: `Service request for ${servName} was cancelled.`,
-          time: `Slot: ${b.bookingTime}`,
-          type: 'reschedule'
-        })
-      } else {
-        alerts.push({
-          text: `Booking request for ${servName} is in progress (${b.status?.replace(/_/g, ' ')}).`,
-          time: `Slot: ${b.bookingTime}`,
-          type: 'reschedule'
-        })
-      }
-    })
-    
-    // Fallback notice
-    alerts.push({
-      text: "Congratulations! Your partner account is active and verified on SevaSetu.",
-      time: "Welcome Alert",
-      type: "kyc"
-    })
-    
-    return alerts
-  }
-
-  const dynamicAlerts = getDynamicNotifications()
 
   // Styles based on theme
   const bgMain = theme === 'light' ? 'bg-[#FFFFFF] text-[#111827]' : 'bg-zinc-950 text-zinc-100'
@@ -547,20 +416,6 @@ const ProviderDashborad = () => {
   const openBookingDetails = (b) => {
     setSelectedBooking(b)
     setDrawerOpen(true)
-  }
-
-  // Message chat sender handler
-  const sendChatMessage = (e) => {
-    e.preventDefault()
-    if (!replyText.trim()) return
-    const newMsg = { sender: "provider", text: replyText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-    setChatHistories(prev => ({
-      ...prev,
-      [selectedChat]: [...(prev[selectedChat] || []), newMsg]
-    }))
-    // update messagesList preview
-    setMessagesList(prev => prev.map(m => m.id === selectedChat ? { ...m, text: replyText, time: "Just now", unread: false } : m))
-    setReplyText('')
   }
 
   // Invoice creator generator
@@ -779,31 +634,27 @@ const ProviderDashborad = () => {
               </div>
               
               <div className="relative pt-4 w-full">
-                {/* SVG Graph */}
                 <svg viewBox="0 0 500 200" className="w-full h-44 overflow-visible">
                   <defs>
                     <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#16A34A" stopOpacity="0.15" />
-                      <stop offset="100%" stopColor="#16A34A" stopOpacity="0.0" />
+                      <stop offset="0%" stopColor="#ec4899" stopOpacity="0.15" />
+                      <stop offset="100%" stopColor="#ec4899" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
-                  
-                  {/* Grid Lines */}
                   <line x1="30" y1="20" x2="480" y2="20" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
                   <line x1="30" y1="70" x2="480" y2="70" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
                   <line x1="30" y1="120" x2="480" y2="120" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" className="dark:stroke-zinc-800" />
                   <line x1="30" y1="170" x2="480" y2="170" stroke="#E5E7EB" strokeWidth="0.5" className="dark:stroke-zinc-800" />
                   
-                  {/* Revenue Curve */}
-                  {chartData.revFillPath && (
+                  {dashboardStats?.chartData?.length > 0 && (
                     <path
-                      d={chartData.revFillPath}
+                      d={`M ${dashboardStats.chartData[0].x} 170 L ` + dashboardStats.chartData.map(p => `${p.x} ${p.yRev}`).join(' L ') + ` L ${dashboardStats.chartData[dashboardStats.chartData.length-1].x} 170 Z`}
                       fill="url(#chartGrad)"
                     />
                   )}
-                  {chartData.revPath && (
+                  {dashboardStats?.chartData?.length > 0 && (
                     <path
-                      d={chartData.revPath}
+                      d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yRev} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yRev}`).join(' ')}
                       stroke="#16A34A"
                       strokeWidth="3"
                       fill="none"
@@ -812,9 +663,9 @@ const ProviderDashborad = () => {
                   )}
                   
                   {/* Booking Curve */}
-                  {chartData.bookPath && (
+                  {dashboardStats?.chartData?.length > 0 && (
                     <path
-                      d={chartData.bookPath}
+                      d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yBook} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yBook}`).join(' ')}
                       stroke="#6366F1"
                       strokeWidth="2.5"
                       fill="none"
@@ -824,7 +675,7 @@ const ProviderDashborad = () => {
                   )}
 
                   {/* Dynamic Data Dots */}
-                  {chartData.points.map((p, idx) => (
+                  {dashboardStats?.chartData?.map((p, idx) => (
                     <g key={idx}>
                       <circle cx={p.x} cy={p.yRev} r="4" fill="#16A34A" />
                       <circle cx={p.x} cy={p.yBook} r="4" fill="#6366F1" />
@@ -832,7 +683,7 @@ const ProviderDashborad = () => {
                   ))}
                   
                   {/* X Labels */}
-                  {chartData.points.map((p, idx) => (
+                  {dashboardStats?.chartData?.map((p, idx) => (
                     <text key={idx} x={p.x} y="190" textAnchor="middle" fontSize="10" fill="#9CA3AF">{p.monthName}</text>
                   ))}
                 </svg>
@@ -1430,84 +1281,6 @@ const ProviderDashborad = () => {
     )
   }
 
-  const renderMessagesTab = () => {
-    const selectedHistory = chatHistories[selectedChat] || []
-    const senderName = messagesList.find(m => m.id === selectedChat)?.sender || "Chat User"
-
-    return (
-      <Card className={`p-0 border ${cardTheme} rounded-[16px] overflow-hidden flex h-[500px]`}>
-        {/* Left Side: Users list */}
-        <div className="w-1/3 border-r border-zinc-100 dark:border-zinc-850 flex flex-col">
-          <div className="p-4 border-b border-zinc-100 dark:border-zinc-850 bg-zinc-50/40 font-bold text-xs text-zinc-500 uppercase tracking-wider">
-            Conversations
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {messagesList.map((msg) => (
-              <div
-                key={msg.id}
-                onClick={() => setSelectedChat(msg.id)}
-                className={`p-3.5 border-b border-zinc-100 dark:border-zinc-850 cursor-pointer transition-colors flex flex-col gap-1.5 ${
-                  selectedChat === msg.id ? 'bg-green-50/30 border-l-4 border-[#16A34A]' : 'hover:bg-zinc-50/30'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-zinc-850 dark:text-zinc-150">{msg.sender}</span>
-                  <span className="text-[9px] text-zinc-400">{msg.time}</span>
-                </div>
-                <p className="text-[10px] text-zinc-500 truncate">{msg.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Side: Conversation Area */}
-        <div className="flex-1 flex flex-col justify-between">
-          {/* Header */}
-          <div className="p-4 border-b border-zinc-100 dark:border-zinc-850 bg-zinc-50/40 flex items-center justify-between">
-            <span className="font-bold text-xs text-zinc-800 dark:text-zinc-200">{senderName}</span>
-            <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-          </div>
-          
-          {/* History */}
-          <div className="flex-1 p-4 overflow-y-auto bg-zinc-50/20 space-y-3">
-            {selectedHistory.map((h, i) => {
-              const isCust = h.sender === 'customer'
-              return (
-                <div key={i} className={`flex ${isCust ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`p-3 rounded-2xl max-w-xs text-xs font-medium ${
-                    isCust ? 'bg-zinc-100 text-zinc-800' : 'bg-[#16A34A] text-white'
-                  }`}>
-                    <p className="leading-relaxed">{h.text}</p>
-                    <span className={`text-[8px] text-right block mt-1 ${isCust ? 'text-zinc-400' : 'text-zinc-200'}`}>
-                      {h.time}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Reply Form */}
-          <form onSubmit={sendChatMessage} className="p-3 border-t border-zinc-150 dark:border-zinc-850 bg-white dark:bg-zinc-950 flex gap-2">
-            <input
-              type="text"
-              placeholder="Type message response..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className={`flex-grow rounded-xl border px-3 py-2 text-xs focus:outline-none ${inputBg}`}
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold rounded-xl cursor-pointer"
-            >
-              Send
-            </button>
-          </form>
-        </div>
-      </Card>
-    )
-  }
-
   const renderNotificationsTab = () => {
     return (
       <Card className={`p-5 border ${cardTheme} rounded-[16px]`}>
@@ -1668,8 +1441,6 @@ const ProviderDashborad = () => {
         return renderReviewsTab()
       case 'earnings':
         return renderEarningsTab()
-      case 'messages':
-        return renderMessagesTab()
       case 'notifications':
         return renderNotificationsTab()
       case 'profile':
@@ -1722,15 +1493,6 @@ const ProviderDashborad = () => {
               <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" />
             </button>
 
-            {/* Message triggers */}
-            <button
-              onClick={() => setActiveTab('messages')}
-              className="h-8 w-8 rounded-lg hover:bg-shell-bg flex items-center justify-center text-text-muted relative cursor-pointer"
-            >
-              <MessageOutlinedIcon fontSize="small" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-[#16A34A] rounded-full animate-pulse" />
-            </button>
-            
             {/* User Profile initials */}
             <div
               onClick={() => setActiveTab('profile')}

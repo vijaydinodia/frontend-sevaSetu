@@ -41,6 +41,7 @@ const AdminDashborad = () => {
   const [bookings, setBookings] = useState([])
   const [reviews, setReviews] = useState([])
   const [pendingApplications, setPendingApplications] = useState([])
+  const [dashboardStats, setDashboardStats] = useState(null)
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [applicationLoading, setApplicationLoading] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -166,13 +167,14 @@ const AdminDashborad = () => {
         return
       }
 
-      const [profileRes, providerRes, bookingRes, reviewRes, pendingRes, locationRes] = await Promise.all([
+      const [profileRes, providerRes, bookingRes, reviewRes, pendingRes, locationRes, statsRes] = await Promise.all([
         axios.get(`${API_URL}/admin/profile`, getHeaders()),
         axios.get(`${API_URL}/admin/provider/getall`, getHeaders()),
         axios.get(`${API_URL}/admin/booking/by-category`, getHeaders()),
         axios.get(`${API_URL}/admin/review/getall`, getHeaders()),
         axios.get(`${API_URL}/admin/provider/applications/pending`, getHeaders()),
         axios.get(`${API_URL}/location/getall`, getHeaders()),
+        axios.get(`${API_URL}/admin/dashboard-stats`, getHeaders()),
       ])
 
       const profileUser = profileRes.data.data?.user || profileRes.data.data || savedUser
@@ -182,6 +184,7 @@ const AdminDashborad = () => {
       setReviews(reviewRes.data.data || [])
       setPendingApplications(pendingRes.data.data || [])
       setLocations(locationRes.data.data || [])
+      setDashboardStats(statsRes.data.data || null)
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
       if (error.response?.status === 401) navigate('/login')
@@ -432,19 +435,10 @@ const AdminDashborad = () => {
   }
 
   // computed values for stat cards
-  const approvedProviders = providers.filter((p) => p.kycStatus === 'approved').length
-  const pendingProviders = providers.filter((p) => p.kycStatus === 'pending').length
-  const completedBookings = bookings.filter((b) => b.status === 'completed').length
-  const pendingBookings = bookings.filter((b) => b.status === 'pending').length
-  const avgRating =
-    reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
-      : '0.0'
-
-  const statCards = [
+  const statCards = dashboardStats ? [
     {
       title: 'Applications',
-      value: pendingApplications.length,
+      value: dashboardStats.pendingProviders || 0,
       icon: <PendingActionsOutlinedIcon />,
       tab: 'applications',
       bg: 'bg-red-50',
@@ -452,7 +446,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Providers',
-      value: providers.length,
+      value: dashboardStats.totalProviders || 0,
       icon: <WorkOutlineOutlinedIcon />,
       tab: 'providers',
       bg: 'bg-pink-50',
@@ -460,7 +454,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Approved',
-      value: approvedProviders,
+      value: dashboardStats.approvedProviders || 0,
       icon: <CheckCircleOutlineOutlinedIcon />,
       tab: 'providers',
       bg: 'bg-emerald-50',
@@ -468,7 +462,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Bookings',
-      value: bookings.length,
+      value: dashboardStats.totalBookings || 0,
       icon: <CalendarMonthOutlinedIcon />,
       tab: 'bookings',
       bg: 'bg-orange-50',
@@ -476,7 +470,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Completed',
-      value: completedBookings,
+      value: dashboardStats.completedBookings || 0,
       icon: <CheckCircleOutlineOutlinedIcon />,
       tab: 'bookings',
       bg: 'bg-emerald-50',
@@ -484,7 +478,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Pending Bookings',
-      value: pendingBookings,
+      value: dashboardStats.pendingBookings || 0,
       icon: <PendingActionsOutlinedIcon />,
       tab: 'bookings',
       bg: 'bg-sky-50',
@@ -492,7 +486,7 @@ const AdminDashborad = () => {
     },
     {
       title: 'Reviews',
-      value: reviews.length,
+      value: dashboardStats.totalReviews || 0,
       icon: <RateReviewOutlinedIcon />,
       tab: 'reviews',
       bg: 'bg-indigo-50',
@@ -500,13 +494,13 @@ const AdminDashborad = () => {
     },
     {
       title: 'Avg Rating',
-      value: avgRating,
+      value: dashboardStats.avgRating || '0.0',
       icon: <StarOutlineOutlinedIcon />,
       tab: 'reviews',
       bg: 'bg-yellow-50',
       text: 'text-yellow-600',
     },
-  ]
+  ] : null
 
   const recentBookings = [...bookings].slice(0, 5)
   const recentProviders = [...providers].slice(0, 5)
@@ -612,7 +606,7 @@ const AdminDashborad = () => {
             <div className="space-y-6">
               {/* Stat cards */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {statCards.map((item) => (
+                {statCards?.map((item) => (
                   <button
                     key={item.title}
                     className="rounded-[28px] bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
@@ -629,6 +623,70 @@ const AdminDashborad = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Chart */}
+              {dashboardStats?.chartData && (
+                <Card className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-zinc-900">Revenue & Bookings Trend</h3>
+                      <p className="text-xs text-zinc-400">6-Month historical data</p>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-semibold">
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-pink-500 rounded-full" /> Revenue (₹)</span>
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-purple-500 rounded-full" /> Bookings</span>
+                    </div>
+                  </div>
+                  
+                  <div className="relative pt-4 w-full">
+                    <svg viewBox="0 0 500 200" className="w-full h-44 overflow-visible">
+                      <defs>
+                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ec4899" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#ec4899" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <line x1="30" y1="20" x2="480" y2="20" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="70" x2="480" y2="70" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="120" x2="480" y2="120" stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="30" y1="170" x2="480" y2="170" stroke="#E5E7EB" strokeWidth="0.5" />
+                      
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} 170 L ` + dashboardStats.chartData.map(p => `${p.x} ${p.yRev}`).join(' L ') + ` L ${dashboardStats.chartData[dashboardStats.chartData.length-1].x} 170 Z`}
+                          fill="url(#chartGrad)"
+                        />
+                      )}
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yRev} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yRev}`).join(' ')}
+                          stroke="#ec4899"
+                          strokeWidth="3"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      )}
+                      {dashboardStats.chartData.length > 0 && (
+                        <path
+                          d={`M ${dashboardStats.chartData[0].x} ${dashboardStats.chartData[0].yBook} ` + dashboardStats.chartData.slice(1).map(p => `L ${p.x} ${p.yBook}`).join(' ')}
+                          stroke="#a855f7"
+                          strokeWidth="2.5"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeDasharray="1"
+                        />
+                      )}
+                      {dashboardStats.chartData.map((p, idx) => (
+                        <g key={idx}>
+                          <circle cx={p.x} cy={p.yRev} r="4" fill="#ec4899" />
+                          <circle cx={p.x} cy={p.yBook} r="4" fill="#a855f7" />
+                          <text x={p.x} y="190" textAnchor="middle" fontSize="10" fill="#9CA3AF">{p.monthName}</text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </Card>
+              )}
 
               {/* Quick overview */}
               <div className="grid gap-5 lg:grid-cols-2">

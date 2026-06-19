@@ -300,18 +300,25 @@ const UserDashborad = () => {
                               </Button>
                             )}
 
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => {
-                                setSelectedBookingForReview(booking)
-                                setShowReviewModal(true)
-                              }}
-                            >
-                              <StarRateRoundedIcon fontSize="small" className="text-amber-500 mr-1" />
-                              Add Review
-                            </Button>
+                            {booking.hasReview ? (
+                              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-3 py-2 rounded-xl w-full justify-center">
+                                <StarRateRoundedIcon fontSize="small" className="text-amber-500" />
+                                Reviewed ✓
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  setSelectedBookingForReview(booking)
+                                  setShowReviewModal(true)
+                                }}
+                              >
+                                <StarRateRoundedIcon fontSize="small" className="text-amber-500 mr-1" />
+                                Add Review
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
