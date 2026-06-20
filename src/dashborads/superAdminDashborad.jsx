@@ -23,6 +23,7 @@ import ToggleOffOutlinedIcon from '@mui/icons-material/ToggleOffOutlined'
 import API_URL from '../api'
 import SuperAdminSidebar from '../components/SuperAdminSidebar'
 import EditProfileModal from '../components/EditProfileModal'
+import ProviderDetailModal from '../components/ProviderDetailModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
@@ -54,6 +55,7 @@ const SuperAdminDashborad = () => {
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [viewingProviderId, setViewingProviderId] = useState(null)
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
@@ -585,11 +587,17 @@ const SuperAdminDashborad = () => {
 
   return (
     <>
+    {viewingProviderId && (
+      <ProviderDetailModal
+        providerId={viewingProviderId}
+        onClose={() => setViewingProviderId(null)}
+      />
+    )}
     <div className="dashboard-shell">
       <SuperAdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="main-col p-5 md:p-8">
-        <header className="mb-6 flex flex-col gap-4 rounded-[28px] bg-card-bg p-5 border border-border-custom shadow-sm md:flex-row md:items-center md:justify-between transition-colors duration-200">
+        <header className="mb-6 flex flex-col gap-4 rounded-[28px] p-5 border shadow-sm md:flex-row md:items-center md:justify-between transition-colors duration-200" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#16A34A] text-white">
               {profile?.profileImage ? (
@@ -1395,7 +1403,7 @@ const SuperAdminDashborad = () => {
             </div>
 
             {providersView.view === 'table' ? (
-              <ProviderTable data={filteredAndSortedProviders} onDelete={(id) => handleSoftDelete('provider', id)} onRestore={(id) => handleRestore('provider', id)} onHardDelete={(id) => handleHardDelete('provider', id)} getUserName={getUserName} getUserEmail={getUserEmail} />
+              <ProviderTable data={filteredAndSortedProviders} onDelete={(id) => handleSoftDelete('provider', id)} onRestore={(id) => handleRestore('provider', id)} onHardDelete={(id) => handleHardDelete('provider', id)} getUserName={getUserName} getUserEmail={getUserEmail} onView={(id) => setViewingProviderId(id)} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredAndSortedProviders.length === 0 ? (
@@ -1413,23 +1421,30 @@ const SuperAdminDashborad = () => {
                             </div>
                           )}
                           <div>
-                            <h4 className="font-bold text-base m-0 text-black dark:text-white">{getUserName(item)}</h4>
-                            <span className="text-xs text-zinc-400 font-mono mt-0.5 block">{getUserEmail(item)}</span>
+                            <h4 className="font-bold text-base m-0" style={{ color: 'var(--text-main)' }}>{getUserName(item)}</h4>
+                            <span className="text-xs font-mono mt-0.5 block" style={{ color: 'var(--text-muted)' }}>{getUserEmail(item)}</span>
                           </div>
                         </div>
                         {item.isDeleted && (
                           <span className="bg-red-50 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">Deleted</span>
                         )}
                       </div>
-                      <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300 mt-2 mb-4">
-                        <p><strong>Business:</strong> {capitalizeWords(item.businessName) || 'N/A'}</p>
-                        <p><strong>KYC:</strong> <span className="capitalize font-semibold">{item.kycStatus || 'N/A'}</span></p>
-                        <p><strong>Rating:</strong> {item.averageRating || 0} ★</p>
-                        <p><strong>Experience:</strong> {item.experience || 0} Yrs</p>
+                      <div className="space-y-1.5 text-xs mt-2 mb-4" style={{ color: 'var(--text-muted)' }}>
+                        <p style={{ color: 'var(--text-main)' }}><strong>Business:</strong> {capitalizeWords(item.businessName) || 'N/A'}</p>
+                        <p style={{ color: 'var(--text-main)' }}><strong>KYC:</strong> <span className="capitalize font-semibold">{item.kycStatus || 'N/A'}</span></p>
+                        <p style={{ color: 'var(--text-main)' }}><strong>Rating:</strong> <span className="text-amber-500 font-bold">{item.averageRating || 0} ★</span></p>
+                        <p style={{ color: 'var(--text-main)' }}><strong>Experience:</strong> {item.experience || 0} Yrs</p>
                       </div>
-                      <div className="flex items-center justify-between border-t pt-3 border-zinc-100 dark:border-zinc-800">
-                        <span className="text-[10px] text-zinc-400">Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border-color)' }}>
+                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Created: {new Date(item.createdAt).toLocaleDateString()}</span>
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setViewingProviderId(item._id)}
+                            className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-full border border-indigo-200 transition-colors"
+                            title="View Provider Profile"
+                          >
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          </button>
                           {item.isDeleted ? (
                             <>
                               <button
@@ -1919,7 +1934,7 @@ const AdminTable = ({ data, onStatus, onDelete, onRestore, onHardDelete, getUser
   )
 }
 
-const ProviderTable = ({ data, onDelete, onRestore, onHardDelete, getUserName, getUserEmail }) => {
+const ProviderTable = ({ data, onDelete, onRestore, onHardDelete, getUserName, getUserEmail, onView }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[940px] text-left text-sm">
@@ -1936,14 +1951,21 @@ const ProviderTable = ({ data, onDelete, onRestore, onHardDelete, getUserName, g
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item._id} className="border-b border-zinc-100">
+            <tr key={item._id} className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
               <td className="p-3 font-semibold">{getUserName(item)}</td>
               <td className="p-3">{getUserEmail(item)}</td>
               <td className="p-3">{capitalizeWords(item.businessName) || 'N/A'}</td>
               <td className="p-3 capitalize">{item.kycStatus || 'N/A'}</td>
-              <td className="p-3">{item.averageRating || 0}</td>
+              <td className="p-3">{item.averageRating || 0} ★</td>
               <td className="p-3">{item.isDeleted ? 'Yes' : 'No'}</td>
               <td className="p-3 flex items-center gap-2">
+                <button
+                  onClick={() => onView && onView(item._id)}
+                  className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full border border-indigo-200 transition-colors"
+                  title="View Provider Profile & Reviews"
+                >
+                  <VisibilityOutlinedIcon fontSize="small" />
+                </button>
                 {item.isDeleted ? (
                   <>
                     <button

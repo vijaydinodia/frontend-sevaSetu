@@ -20,6 +20,7 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined'
 import API_URL from '../api'
 import AdminSidebar from '../components/AdminSidebar'
 import EditProfileModal from '../components/EditProfileModal'
+import ProviderDetailModal from '../components/ProviderDetailModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { capitalize, capitalizeWords } from '../lib/utils'
@@ -48,7 +49,7 @@ const AdminDashborad = () => {
   const [message, setMessage] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
-  const [selectedDocs, setSelectedDocs] = useState(null)
+  const [viewingProviderId, setViewingProviderId] = useState(null)
 
   // for bookings by provider view
   const [selectedProvider, setSelectedProvider] = useState(null)
@@ -506,6 +507,13 @@ const AdminDashborad = () => {
   const recentProviders = [...providers].slice(0, 5)
 
   return (
+    <>
+    {viewingProviderId && (
+      <ProviderDetailModal
+        providerId={viewingProviderId}
+        onClose={() => setViewingProviderId(null)}
+      />
+    )}
     <div className="dashboard-shell">
       {/* Sidebar */}
       <AdminSidebar
@@ -1084,11 +1092,11 @@ const AdminDashborad = () => {
                               </button>
                             )}
 
-                            {/* View verification documents */}
+                            {/* View Provider Profile (opens modal) */}
                             <button
-                              onClick={() => setSelectedDocs(item)}
-                              className="text-blue-600 hover:bg-blue-50 p-2 rounded-full border border-blue-200 transition-colors"
-                              title="View Documents"
+                              onClick={() => setViewingProviderId(item._id)}
+                              className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full border border-indigo-200 transition-colors"
+                              title="View Provider Profile & Reviews"
                             >
                               <VisibilityOutlinedIcon fontSize="small" />
                             </button>
@@ -1201,9 +1209,9 @@ const AdminDashborad = () => {
                             </button>
                           )}
                           <button
-                            onClick={() => setSelectedDocs(item)}
-                            className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-full border border-blue-200 transition-colors"
-                            title="View Documents"
+                            onClick={() => setViewingProviderId(item._id)}
+                            className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-full border border-indigo-200 transition-colors"
+                            title="View Provider Profile & Reviews"
                           >
                             <VisibilityOutlinedIcon fontSize="small" />
                           </button>
@@ -1911,7 +1919,7 @@ const AdminDashborad = () => {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <Button onClick={() => setSelectedDocs(null)} title="Close">
+              <Button onClick={() => setViewingProviderId(null)} title="Close">
                 <CloseOutlinedIcon fontSize="small" />
                 Close
               </Button>
@@ -1920,6 +1928,7 @@ const AdminDashborad = () => {
         </div>
       )}
     </div>
+  </>
   )
 }
 

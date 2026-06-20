@@ -140,22 +140,31 @@ html, body, #root {
 .dark .text-zinc-900 {
   color: var(--text-main) !important;
 }
-.dark .text-zinc-700,
-.dark .text-zinc-600,
-.dark .text-zinc-500,
-.dark .text-zinc-400 {
+/* Only override muted text classes OUTSIDE of tables to preserve td readability */
+.dark .text-zinc-700:not(td):not(th):not(td *):not(th *),
+.dark .text-zinc-600:not(td):not(th):not(td *):not(th *),
+.dark .text-zinc-500:not(td):not(th):not(td *):not(th *),
+.dark .text-zinc-400:not(td):not(th):not(td *):not(th *) {
   color: var(--text-muted) !important;
 }
+/* Table: fully theme-aware */
 .dark thead {
   background-color: var(--bg-shell) !important;
-  color: var(--text-main) !important;
 }
-.dark table {
+.dark thead th {
+  color: var(--text-main) !important;
   border-color: var(--border-color) !important;
 }
-.dark th, .dark td {
-  border-color: var(--border-color) !important;
+.dark tbody td {
   color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+.dark tbody tr {
+  background-color: var(--bg-card);
+  border-color: var(--border-color) !important;
+}
+.dark tbody tr:hover {
+  background-color: var(--bg-input) !important;
 }
 .dark input:not([type="button"]):not([type="submit"]):not([type="reset"]),
 .dark select,
@@ -167,6 +176,13 @@ html, body, #root {
 .dark header {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
+}
+
+/* ── Card component dark defaults ── */
+.dark .rounded-\[28px\],
+.dark .rounded-3xl,
+.dark .rounded-2xl {
+  border-color: var(--border-color);
 }
 
 @keyframes fade-up {
