@@ -18,11 +18,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app = null;
+let auth = null;
+let googleProvider = null;
 
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "" && !firebaseConfig.apiKey.startsWith("YOUR_")) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+  }
+} else {
+  console.warn("Firebase VITE_FIREBASE_API_KEY is not configured or placeholder. Firebase features will be disabled.");
+}
 
 export {
   auth,
