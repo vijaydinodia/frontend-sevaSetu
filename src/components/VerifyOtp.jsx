@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import PinOutlinedIcon from '@mui/icons-material/PinOutlined'
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined'
+import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
 
@@ -18,13 +19,14 @@ const VerifyOtp = () => {
   const { theme } = useTheme()
 
   const isLight  = theme === 'light'
-  const cardBg   = isLight ? 'bg-white border-zinc-200 shadow-xl shadow-zinc-200/60'
+  const containerBg = isLight ? 'bg-green-50/50 text-zinc-900' : 'bg-zinc-950 text-zinc-100'
+  const cardBg   = isLight ? 'bg-white border-zinc-200/80 shadow-xl shadow-green-900/5'
                            : 'bg-zinc-900 border-zinc-800 shadow-xl shadow-black/40'
   const inputCls = isLight
-    ? 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-purple-500 focus:ring-purple-500/20'
-    : 'bg-zinc-800 border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-purple-500/20'
+    ? 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-green-600 focus:ring-green-600/10'
+    : 'bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:border-green-500 focus:ring-green-500/10'
   const iconCls   = isLight ? 'text-zinc-400' : 'text-zinc-500'
-  const textMuted = isLight ? 'text-zinc-500' : 'text-zinc-400'
+  const textMuted = isLight ? 'text-zinc-550' : 'text-zinc-400'
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
@@ -48,15 +50,15 @@ const VerifyOtp = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-12">
-      <div className={`w-full max-w-md rounded-[28px] border p-8 transition-colors duration-200 ${cardBg}`}>
+    <div className={`flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-12 transition-colors duration-200 ${containerBg}`}>
+      <div className={`w-full max-w-md rounded-xl border p-8 shadow-xl animate-slide-fade ${cardBg}`}>
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#16A34A] to-emerald-500 text-white shadow-md shadow-green-600/10">
             <PinOutlinedIcon fontSize="medium" />
           </div>
-          <h1 className="text-3xl font-bold">Verify OTP</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Verify OTP</h1>
           <p className={`mt-1 text-sm ${textMuted}`}>Enter the 6-digit code sent to your email</p>
         </div>
 
@@ -75,7 +77,7 @@ const VerifyOtp = () => {
               placeholder="Email address"
               autoComplete="email"
               required
-              className={`w-full rounded-2xl border py-3 pl-10 pr-4 text-sm outline-none ring-0 transition focus:ring-4 ${inputCls}`}
+              className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition focus:ring-4 ${inputCls}`}
             />
           </div>
 
@@ -84,33 +86,33 @@ const VerifyOtp = () => {
             name="otp"
             value={formData.otp}
             onChange={handleChange}
-            placeholder="Enter 6-digit OTP"
+            placeholder="Enter OTP"
             inputMode="numeric"
             maxLength="6"
             required
-            className={`w-full rounded-2xl border py-3 px-4 text-center text-2xl font-bold tracking-[0.5em] outline-none ring-0 transition focus:ring-4 ${inputCls}`}
+            className={`w-full rounded-xl border py-3 px-4 text-center text-2xl font-bold tracking-[0.3em] outline-none transition focus:ring-4 ${inputCls}`}
           />
 
           {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 font-semibold text-white shadow-lg shadow-pink-300/30 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 font-semibold text-white shadow-md shadow-green-600/10 hover:from-green-700 hover:to-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
-            <CheckCircleOutlineOutlinedIcon fontSize="small" />
+            {loading ? <HourglassEmptyOutlinedIcon className="animate-spin" fontSize="small" /> : <CheckCircleOutlineOutlinedIcon fontSize="small" />}
             {loading ? 'Verifying...' : 'Verify OTP'}
           </button>
 
           {/* Message */}
           {message.text && (
-            <p className={`text-center text-sm font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+            <p className={`text-center text-xs font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
               {message.text}
             </p>
           )}
 
-          <p className={`text-center text-sm ${textMuted}`}>
+          <p className={`text-center text-xs ${textMuted}`}>
             Didn't receive the OTP?{' '}
-            <Link to="/forget-password" className="font-semibold text-pink-500 hover:underline">
+            <Link to="/forget-password" className="font-semibold text-green-600 dark:text-green-500 hover:underline">
               Resend
             </Link>
           </p>

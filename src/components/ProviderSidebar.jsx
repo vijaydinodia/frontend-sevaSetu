@@ -17,6 +17,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import useTheme from '../custom_hook/UseTheme'
+import { logoutUser } from '../utils/logoutHelper'
 
 const ProviderSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, provider, userDetails }) => {
   const navigate = useNavigate()
@@ -45,9 +46,8 @@ const ProviderSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pro
     { key: 'profile', label: 'Settings', icon: <SettingsOutlinedIcon fontSize="small" /> },
   ]
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    await logoutUser()
     navigate('/login')
   }
 

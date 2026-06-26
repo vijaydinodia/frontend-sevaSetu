@@ -10,6 +10,7 @@ import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined'
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined'
 import Button from './ui/Button'
 import useTheme from '../custom_hook/UseTheme'
+import { logoutUser } from '../utils/logoutHelper'
 
 const getDashboardRoute = (role) => {
   if (role === 'provider')   return '/provider-dashboard'
@@ -30,9 +31,8 @@ const Navbar = ({ user: userProp, onLogout }) => {
   const role = user?.role || null        
 
   // Logout
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    await logoutUser()
     setMobileOpen(false)
     if (onLogout) onLogout()
     navigate('/')

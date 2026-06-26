@@ -13,6 +13,7 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import useTheme from '../custom_hook/UseTheme'
+import { logoutUser } from '../utils/logoutHelper'
 
 const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendingCount }) => {
   const navigate = useNavigate()
@@ -27,9 +28,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, pendin
     { key: 'locations', label: 'Locations', icon: <LocationOnOutlinedIcon fontSize="small" /> },
   ]
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    await logoutUser()
     navigate('/login')
   }
 

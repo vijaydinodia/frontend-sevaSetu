@@ -3,8 +3,12 @@ import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import LockResetOutlinedIcon from '@mui/icons-material/LockResetOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
+import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
+
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -14,18 +18,21 @@ const ResetPassword = () => {
     confirmPassword: '',
   })
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
   const navigate = useNavigate()
   const { theme } = useTheme()
 
   const isLight  = theme === 'light'
-  const cardBg   = isLight ? 'bg-white border-zinc-200 shadow-xl shadow-zinc-200/60'
+  const containerBg = isLight ? 'bg-green-50/50 text-zinc-900' : 'bg-zinc-950 text-zinc-100'
+  const cardBg   = isLight ? 'bg-white border-zinc-200/80 shadow-xl shadow-green-900/5'
                            : 'bg-zinc-900 border-zinc-800 shadow-xl shadow-black/40'
   const inputCls = isLight
-    ? 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-purple-500 focus:ring-purple-500/20'
-    : 'bg-zinc-800 border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-purple-500/20'
+    ? 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-green-600 focus:ring-green-600/10'
+    : 'bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:border-green-500 focus:ring-green-500/10'
   const iconCls   = isLight ? 'text-zinc-400' : 'text-zinc-500'
-  const textMuted = isLight ? 'text-zinc-500' : 'text-zinc-400'
+  const textMuted = isLight ? 'text-zinc-550' : 'text-zinc-400'
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
@@ -55,15 +62,15 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-12">
-      <div className={`w-full max-w-md rounded-[28px] border p-8 transition-colors duration-200 ${cardBg}`}>
+    <div className={`flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-12 transition-colors duration-200 ${containerBg}`}>
+      <div className={`w-full max-w-md rounded-xl border p-8 shadow-xl animate-slide-fade ${cardBg}`}>
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#16A34A] to-emerald-500 text-white shadow-md shadow-green-600/10">
             <LockResetOutlinedIcon fontSize="medium" />
           </div>
-          <h1 className="text-3xl font-bold">Reset Password</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Reset Password</h1>
           <p className={`mt-1 text-sm ${textMuted}`}>Create a strong new password</p>
         </div>
 
@@ -76,14 +83,21 @@ const ResetPassword = () => {
             </span>
             <input
               name="newPassword"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.newPassword}
               onChange={handleChange}
               placeholder="New password"
               autoComplete="new-password"
               required
-              className={`w-full rounded-2xl border py-3 pl-10 pr-4 text-sm outline-none ring-0 transition focus:ring-4 ${inputCls}`}
+              className={`w-full rounded-xl border py-3 pl-10 pr-10 text-sm outline-none transition focus:ring-4 ${inputCls}`}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className={`absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer transition text-zinc-400 hover:text-green-600 dark:hover:text-green-500`}
+            >
+              {showPassword ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+            </button>
           </div>
 
           {/* Confirm Password */}
@@ -93,14 +107,21 @@ const ResetPassword = () => {
             </span>
             <input
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Confirm password"
               autoComplete="new-password"
               required
-              className={`w-full rounded-2xl border py-3 pl-10 pr-4 text-sm outline-none ring-0 transition focus:ring-4 ${inputCls}`}
+              className={`w-full rounded-xl border py-3 pl-10 pr-10 text-sm outline-none transition focus:ring-4 ${inputCls}`}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className={`absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer transition text-zinc-400 hover:text-green-600 dark:hover:text-green-500`}
+            >
+              {showConfirmPassword ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+            </button>
           </div>
 
           {/* Password match indicator */}
@@ -114,22 +135,22 @@ const ResetPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 font-semibold text-white shadow-lg shadow-pink-300/30 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 font-semibold text-white shadow-md shadow-green-600/10 hover:from-green-700 hover:to-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
           >
-            <LockResetOutlinedIcon fontSize="small" />
+            {loading ? <HourglassEmptyOutlinedIcon className="animate-spin" fontSize="small" /> : <LockResetOutlinedIcon fontSize="small" />}
             {loading ? 'Resetting...' : 'Reset Password'}
           </button>
 
           {/* Message */}
           {message.text && (
-            <p className={`text-center text-sm font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+            <p className={`text-center text-xs font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
               {message.text}
             </p>
           )}
 
-          <p className={`text-center text-sm ${textMuted}`}>
+          <p className={`text-center text-xs ${textMuted}`}>
             Back to{' '}
-            <Link to="/login" className="font-semibold text-pink-500 hover:underline">
+            <Link to="/login" className="font-semibold text-green-600 dark:text-green-500 hover:underline">
               Login
             </Link>
           </p>
