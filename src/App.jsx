@@ -22,6 +22,7 @@ import FAQ          from './components/FAQ'
 import CategoryProviders from './components/CategoryProviders'
 import ProviderDetails   from './components/ProviderDetails'
 import ServiceDetails    from './components/ServiceDetails'
+import GitHubCallback    from './components/GitHubCallback'
 
 // Protected dashboards (have their own sidebars/headers — no shared Navbar)
 import UserDashborad      from './dashborads/UserDashborad'
@@ -54,6 +55,7 @@ const App = () => {
         <Route element={<PublicLayout />}>
           <Route path="/login"           element={<Login />} />
           <Route path="/signup"          element={<SignUp />} />
+          <Route path="/auth/github/callback" element={<GitHubCallback />} />
           <Route path="/become-provider" element={<BecomeProvider />} />
           <Route path="/forget-password" element={<Forget />} />
           <Route path="/verify-otp"      element={<VerifyOtp />} />

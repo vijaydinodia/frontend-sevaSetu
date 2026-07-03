@@ -8,6 +8,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
+import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 
 const ResetPassword = () => {
@@ -55,7 +56,7 @@ const ResetPassword = () => {
       setMessage({ text: res.data.message || 'Password reset! Redirecting...', type: 'success' })
       setTimeout(() => navigate('/login'), 1500)
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -135,17 +136,22 @@ const ResetPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 font-semibold text-white shadow-md shadow-green-600/10 hover:from-green-700 hover:to-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 font-semibold text-white shadow-md shadow-green-600/10 hover:from-green-700 hover:to-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed mt-2 cursor-pointer"
           >
             {loading ? <HourglassEmptyOutlinedIcon className="animate-spin" fontSize="small" /> : <LockResetOutlinedIcon fontSize="small" />}
             {loading ? 'Resetting...' : 'Reset Password'}
           </button>
 
-          {/* Message */}
+          {/* Message Alert Banner */}
           {message.text && (
-            <p className={`text-center text-xs font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
-              {message.text}
-            </p>
+            <div className={`p-3 rounded-xl border text-xs font-semibold flex items-start gap-2.5 animate-slide-fade ${
+              message.type === 'error' 
+                ? 'bg-red-50 border-red-200 text-red-650 dark:bg-red-950/20 dark:border-red-900/50' 
+                : 'bg-emerald-50 border-emerald-250 text-emerald-650 dark:bg-emerald-950/20 dark:border-emerald-900/50'
+            }`}>
+              <span>{message.type === 'error' ? '⚠️' : '✅'}</span>
+              <span className="flex-1 text-left">{message.text}</span>
+            </div>
           )}
 
           <p className={`text-center text-xs ${textMuted}`}>

@@ -6,11 +6,13 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import GoogleIcon from '@mui/icons-material/Google'
+import GitHubIcon from '@mui/icons-material/GitHub'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
-import { auth, googleProvider, signInWithEmailAndPassword, signInWithPopup } from '../firebase'
+import { auth, googleProvider, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from '../firebase'
+import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -33,6 +35,29 @@ const Login = () => {
     }
   }, [])
 
+  // Handle returning from Google Sign-In redirect
+  React.useEffect(() => {
+    if (!auth) return;
+
+    const handleRedirectOutcome = async () => {
+      try {
+        setLoading(true);
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const savedRememberMe = localStorage.getItem('google_login_remember_me') === 'true';
+          localStorage.removeItem('google_login_remember_me');
+          await handleGoogleUserResult(result.user, savedRememberMe);
+        }
+      } catch (error) {
+        setMessage({ text: getFriendlyErrorMessage(error), type: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleRedirectOutcome();
+  }, [auth]);
+
   // Theme classes
   const containerBg = isLight ? 'bg-green-50/50 text-zinc-900' : 'bg-zinc-950 text-zinc-100'
   const cardBg   = isLight ? 'bg-white border-zinc-200/80 shadow-xl shadow-green-900/5'
@@ -47,6 +72,32 @@ const Login = () => {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
+  const handleGoogleUserResult = async (firebaseUser, isRememberMe) => {
+    const idToken = await firebaseUser.getIdToken()
+
+    // Store Firebase session separately
+    localStorage.setItem('firebaseToken', idToken)
+    localStorage.setItem('firebaseUser', JSON.stringify(firebaseUser))
+
+    // Send Firebase token to backend
+    const res = await axios.post(`${API_URL}/auth/firebase/google`, { token: idToken })
+    if (res.data.token) localStorage.setItem('token', res.data.token)
+    if (res.data.user)  localStorage.setItem('user', JSON.stringify(res.data.user))
+
+    if (isRememberMe && firebaseUser.email) {
+      localStorage.setItem('rememberedEmail', firebaseUser.email)
+    } else {
+      localStorage.removeItem('rememberedEmail')
+    }
+
+    setMessage({ text: res.data.message || 'Login successful', type: 'success' })
+    const role = res.data.user?.role
+    if (role === 'provider')   navigate('/provider-dashboard')
+    else if (role === 'admin') navigate('/admin-dashboard')
+    else if (role === 'superAdmin') navigate('/super-admin-dashboard')
+    else navigate('/')
+  }
+
   const handleGoogleLogin = async () => {
     setLoading(true)
     setMessage({ text: '', type: '' })
@@ -54,34 +105,22 @@ const Login = () => {
       if (!auth) {
         throw new Error("Firebase Auth is not initialized. Please verify that your VITE_FIREBASE_API_KEY is configured in the environment.")
       }
-      const result = await signInWithPopup(auth, googleProvider)
-      const idToken = await result.user.getIdToken()
 
-      // Store Firebase session separately
-      localStorage.setItem('firebaseToken', idToken)
-      localStorage.setItem('firebaseUser', JSON.stringify(result.user))
-
-      // Send Firebase token to backend
-      const res = await axios.post(`${API_URL}/auth/firebase/google`, { token: idToken })
-      if (res.data.token) localStorage.setItem('token', res.data.token)
-      if (res.data.user)  localStorage.setItem('user', JSON.stringify(res.data.user))
-
-      if (rememberMe && result.user.email) {
-        localStorage.setItem('rememberedEmail', result.user.email)
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        localStorage.setItem('google_login_remember_me', rememberMe ? 'true' : 'false');
+        await signInWithRedirect(auth, googleProvider);
       } else {
-        localStorage.removeItem('rememberedEmail')
+        const result = await signInWithPopup(auth, googleProvider)
+        await handleGoogleUserResult(result.user, rememberMe);
       }
-
-      setMessage({ text: res.data.message || 'Login successful', type: 'success' })
-      const role = res.data.user?.role
-      if (role === 'provider')   navigate('/provider-dashboard')
-      else if (role === 'admin') navigate('/admin-dashboard')
-      else if (role === 'superAdmin') navigate('/super-admin-dashboard')
-      else navigate('/')
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
-      setLoading(false)
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (!isMobile) {
+        setLoading(false)
+      }
     }
   }
 
@@ -131,7 +170,7 @@ const Login = () => {
         else navigate('/')
       }
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -258,6 +297,27 @@ const Login = () => {
           >
             <GoogleIcon className="text-red-500" fontSize="small" />
             Continue with Google
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+              if (!clientId) {
+                setMessage({ text: 'GitHub OAuth is not configured. Please set VITE_GITHUB_CLIENT_ID in your environment.', type: 'error' })
+                return
+              }
+              window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`
+            }}
+            disabled={loading}
+            className={`flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border font-semibold transition cursor-pointer ${
+              isLight
+                ? 'border-zinc-200 bg-[#24292e] text-white hover:bg-[#2f363d]'
+                : 'border-zinc-700 bg-[#24292e] text-white hover:bg-[#2f363d]'
+            }`}
+          >
+            <GitHubIcon fontSize="small" />
+            Continue with GitHub
           </button>
 
           {/* Sign up link */}

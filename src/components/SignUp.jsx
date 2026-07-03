@@ -5,6 +5,7 @@ import { Country, State, City } from 'country-state-city'
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined'
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import GoogleIcon from '@mui/icons-material/Google'
+import GitHubIcon from '@mui/icons-material/GitHub'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
@@ -15,7 +16,8 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
-import { auth, googleProvider, createUserWithEmailAndPassword, signInWithPopup } from '../firebase'
+import { auth, googleProvider, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from '../firebase'
+import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -39,8 +41,8 @@ const SignUp = () => {
     ? 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-green-600 focus:ring-green-600/10'
     : 'bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:border-green-500 focus:ring-green-500/10'
   const textTitle   = isLight ? 'text-zinc-850' : 'text-white'
-  const labelCls    = isLight ? 'text-zinc-500' : 'text-zinc-400'
-  const textMuted   = isLight ? 'text-zinc-550' : 'text-zinc-400'
+  const labelCls    = isLight ? 'text-zinc-550' : 'text-zinc-400'
+  const textMuted   = isLight ? 'text-zinc-655' : 'text-zinc-400'
   const divider     = isLight ? 'border-zinc-150' : 'border-zinc-800'
   const toggleBg    = isLight ? 'bg-zinc-100' : 'bg-zinc-800/80'
 
@@ -76,6 +78,60 @@ const SignUp = () => {
     setFormData({ ...formData, address: { ...formData.address, city: e.target.value } })
   }
 
+  // Restore form state and handle Google sign-up redirect outcome
+  React.useEffect(() => {
+    const savedForm = localStorage.getItem('signup_form_data_persist');
+    if (savedForm) {
+      try {
+        const parsed = JSON.parse(savedForm);
+        setFormData(parsed);
+      } catch (e) {
+        console.error("Failed to restore signup form data:", e);
+      }
+      localStorage.removeItem('signup_form_data_persist');
+    }
+
+    if (!auth) return;
+
+    const handleRedirectOutcome = async () => {
+      try {
+        setLoading(true);
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          await handleGoogleUserSignUpResult(result.user);
+        }
+      } catch (error) {
+        setMessage({ text: getFriendlyErrorMessage(error), type: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleRedirectOutcome();
+  }, [auth]);
+
+  const handleGoogleUserSignUpResult = async (firebaseUser) => {
+    const idToken = await firebaseUser.getIdToken()
+
+    // Store Firebase session separately
+    localStorage.setItem('firebaseToken', idToken)
+    localStorage.setItem('firebaseUser', JSON.stringify(firebaseUser))
+
+    // Google signup automatically creates or logs in the user on the backend
+    const res = await axios.post(`${API_URL}/auth/firebase/google`, {
+      token: idToken,
+      role: 'user', // Default customer role
+      address: formData.address,
+      phone: formData.phone || undefined,
+    })
+
+    if (res.data.token) localStorage.setItem('token', res.data.token)
+    if (res.data.user)  localStorage.setItem('user', JSON.stringify(res.data.user))
+
+    setMessage({ text: res.data.message || 'Registration successful', type: 'success' })
+    setTimeout(() => navigate('/'), 1200)
+  }
+
   const handleGoogleSignUp = async () => {
     setLoading(true)
     setMessage({ text: '', type: '' })
@@ -83,30 +139,22 @@ const SignUp = () => {
       if (!auth) {
         throw new Error("Firebase Auth is not initialized. Please verify that your VITE_FIREBASE_API_KEY is configured in the environment.")
       }
-      const result = await signInWithPopup(auth, googleProvider)
-      const idToken = await result.user.getIdToken()
 
-      // Store Firebase session separately
-      localStorage.setItem('firebaseToken', idToken)
-      localStorage.setItem('firebaseUser', JSON.stringify(result.user))
-
-      // Google signup automatically creates or logs in the user on the backend
-      const res = await axios.post(`${API_URL}/auth/firebase/google`, {
-        token: idToken,
-        role: 'user', // Default customer role
-        address: formData.address,
-        phone: formData.phone || undefined,
-      })
-
-      if (res.data.token) localStorage.setItem('token', res.data.token)
-      if (res.data.user)  localStorage.setItem('user', JSON.stringify(res.data.user))
-
-      setMessage({ text: res.data.message || 'Registration successful', type: 'success' })
-      setTimeout(() => navigate('/'), 1200)
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        localStorage.setItem('signup_form_data_persist', JSON.stringify(formData));
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        const result = await signInWithPopup(auth, googleProvider)
+        await handleGoogleUserSignUpResult(result.user);
+      }
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
-      setLoading(false)
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (!isMobile) {
+        setLoading(false)
+      }
     }
   }
 
@@ -209,7 +257,7 @@ const SignUp = () => {
         setTimeout(() => navigate('/'), 1500)
       }
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -417,7 +465,7 @@ const SignUp = () => {
                 <div className={`flex-grow border-t ${divider}`}></div>
               </div>
 
-              <div className="flex justify-center mt-1">
+              <div className="flex justify-center gap-4 mt-1">
                 <button
                   type="button"
                   onClick={handleGoogleSignUp}
@@ -430,6 +478,22 @@ const SignUp = () => {
                   title="Sign up with Google"
                 >
                   <GoogleIcon className="text-red-500" fontSize="medium" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+                    if (!clientId) {
+                      setMessage({ text: 'GitHub OAuth is not configured. Please set VITE_GITHUB_CLIENT_ID in your environment.', type: 'error' })
+                      return
+                    }
+                    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`
+                  }}
+                  disabled={loading}
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border transition hover:scale-105 cursor-pointer shadow-sm border-zinc-700 bg-[#24292e] text-white hover:bg-[#2f363d]"
+                  title="Sign up with GitHub"
+                >
+                  <GitHubIcon fontSize="medium" />
                 </button>
               </div>
             </div>

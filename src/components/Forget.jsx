@@ -7,6 +7,7 @@ import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlin
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
 import { auth, sendPasswordResetEmail } from '../firebase'
+import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 
 const Forget = () => {
@@ -48,7 +49,7 @@ const Forget = () => {
         setMessage({ text: 'Firebase password reset email has been sent successfully!', type: 'success' })
       }
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || error.message, type: 'error' })
+      setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -97,11 +98,16 @@ const Forget = () => {
             {loading ? 'Sending...' : resetType === 'standard' ? 'Send OTP' : 'Send Reset Link'}
           </button>
 
-          {/* Message */}
+          {/* Message Alert Banner */}
           {message.text && (
-            <p className={`text-center text-xs font-semibold ${message.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
-              {message.text}
-            </p>
+            <div className={`p-3 rounded-xl border text-xs font-semibold flex items-start gap-2.5 animate-slide-fade ${
+              message.type === 'error' 
+                ? 'bg-red-50 border-red-200 text-red-650 dark:bg-red-950/20 dark:border-red-900/50' 
+                : 'bg-emerald-50 border-emerald-250 text-emerald-650 dark:bg-emerald-950/20 dark:border-emerald-900/50'
+            }`}>
+              <span>{message.type === 'error' ? '⚠️' : '✅'}</span>
+              <span className="flex-1 text-left">{message.text}</span>
+            </div>
           )}
 
           <p className={`text-center text-xs ${textMuted} mt-2`}>
