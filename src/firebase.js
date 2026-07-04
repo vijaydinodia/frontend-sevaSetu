@@ -34,7 +34,9 @@ if (
     auth = getAuth(app);
 
     googleProvider = new GoogleAuthProvider();
+
     githubProvider = new GithubAuthProvider();
+    githubProvider.addScope("user:email"); // required fix
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }

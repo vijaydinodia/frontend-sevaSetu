@@ -1913,8 +1913,8 @@ const SuperAdminDashborad = () => {
                   />
                 </div>
 
-                {/* Sessions Table */}
-                <div className="overflow-x-auto rounded-2xl border border-[var(--border-color)]">
+                {/* Sessions Table (Desktop View) */}
+                <div className="hidden md:block overflow-x-auto rounded-2xl border border-[var(--border-color)]">
                   <table className="min-w-full text-sm text-[var(--text-main)]">
                     <thead>
                       <tr className="border-b border-[var(--border-color)] bg-[var(--bg-shell)]">
@@ -1988,6 +1988,92 @@ const SuperAdminDashborad = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Card List View (shown on mobile/tablet) */}
+                <div className="block md:hidden flex flex-col gap-4 mt-2">
+                  {sessionsData.sessions.filter((s) => {
+                    const q = sessionSearch.toLowerCase().trim()
+                    if (!q) return true
+                    const userName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase()
+                    const userEmail = s.user?.email?.toLowerCase() || ''
+                    const device = s.deviceType?.toLowerCase() || ''
+                    const os = s.os?.toLowerCase() || ''
+                    const browser = s.browser?.toLowerCase() || ''
+                    const ip = s.ip?.toLowerCase() || ''
+                    const loc = `${s.location?.city || ''} ${s.location?.region || ''} ${s.location?.country || ''}`.toLowerCase()
+                    return userName.includes(q) || userEmail.includes(q) || device.includes(q) || os.includes(q) || browser.includes(q) || ip.includes(q) || loc.includes(q)
+                  }).map((session) => (
+                    <div key={session._id} className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+                      {/* Top Row: User Avatar/Name/Role */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#16A34A] text-white text-xs font-bold shadow-sm shrink-0">
+                          {session.user?.profileImage ? (
+                            <img src={session.user.profileImage} alt="avatar" className="h-full w-full rounded-full object-cover" />
+                          ) : (
+                            (session.user?.firstName?.[0] || 'U').toUpperCase()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-[var(--text-main)] truncate m-0">
+                            {capitalizeWords(`${session.user?.firstName || ''} ${session.user?.lastName || ''}`.trim()) || 'N/A'}
+                          </h4>
+                          <p className="text-xs text-[var(--text-muted)] truncate m-0">{session.user?.email || 'N/A'}</p>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase shrink-0 ${
+                          session.user?.role === 'superAdmin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                          : session.user?.role === 'admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                          : session.user?.role === 'provider' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                        }`}>
+                          {session.user?.role || 'user'}
+                        </span>
+                      </div>
+
+                      {/* Info grid */}
+                      <div className="grid grid-cols-2 gap-3 text-xs border-t border-[var(--border-color)] pt-3">
+                        <div>
+                          <p className="font-bold text-[var(--text-muted)] uppercase tracking-wide text-[9px] mb-0.5">Device</p>
+                          <span className="flex items-center gap-1.5 text-[var(--text-main)] font-semibold">
+                            {session.deviceType === 'Mobile' && <PhoneAndroidOutlinedIcon style={{ fontSize: 14 }} />}
+                            {session.deviceType === 'Desktop' && <DesktopWindowsOutlinedIcon style={{ fontSize: 14 }} />}
+                            {session.deviceType === 'Tablet' && <TabletMacOutlinedIcon style={{ fontSize: 14 }} />}
+                            {session.deviceType}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[var(--text-muted)] uppercase tracking-wide text-[9px] mb-0.5">IP Address</p>
+                          <span className="font-mono text-[var(--text-main)]">{session.ip}</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[var(--text-muted)] uppercase tracking-wide text-[9px] mb-0.5">System</p>
+                          <span className="text-[var(--text-main)]">{session.os} / {session.browser}</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[var(--text-muted)] uppercase tracking-wide text-[9px] mb-0.5">Location</p>
+                          <span className="text-[var(--text-main)]">
+                            {session.location?.city !== 'Unknown'
+                              ? `${session.location?.city}, ${session.location?.country}`
+                              : session.location?.city === 'Localhost'
+                                ? 'Localhost'
+                                : 'Unknown'
+                          }
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Login Timestamp */}
+                      <div className="border-t border-[var(--border-color)] pt-2 flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                        <span>Logged in:</span>
+                        <span className="font-semibold">{new Date(session.loginAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {sessionsData.sessions.length === 0 && (
+                    <div className="text-center p-6 text-[var(--text-muted)] bg-[var(--bg-shell)] rounded-2xl border border-[var(--border-color)]">
+                      No active sessions found
+                    </div>
+                  )}
                 </div>
               </>
             )}
