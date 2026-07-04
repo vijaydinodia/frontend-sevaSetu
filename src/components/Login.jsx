@@ -11,7 +11,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
-import { auth, googleProvider, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from '../firebase'
+import { auth, googleProvider, signInWithEmailAndPassword, signInWithPopup } from '../firebase'
 import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 const Login = () => {
@@ -35,28 +35,7 @@ const Login = () => {
     }
   }, [])
 
-  // Handle returning from Google Sign-In redirect
-  React.useEffect(() => {
-    if (!auth) return;
 
-    const handleRedirectOutcome = async () => {
-      try {
-        setLoading(true);
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          const savedRememberMe = localStorage.getItem('google_login_remember_me') === 'true';
-          localStorage.removeItem('google_login_remember_me');
-          await handleGoogleUserResult(result.user, savedRememberMe);
-        }
-      } catch (error) {
-        setMessage({ text: getFriendlyErrorMessage(error), type: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleRedirectOutcome();
-  }, [auth]);
 
   // Theme classes
   const containerBg = isLight ? 'bg-green-50/50 text-zinc-900' : 'bg-zinc-950 text-zinc-100'
@@ -106,21 +85,12 @@ const Login = () => {
         throw new Error("Firebase Auth is not initialized. Please verify that your VITE_FIREBASE_API_KEY is configured in the environment.")
       }
 
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isMobile) {
-        localStorage.setItem('google_login_remember_me', rememberMe ? 'true' : 'false');
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        const result = await signInWithPopup(auth, googleProvider)
-        await handleGoogleUserResult(result.user, rememberMe);
-      }
+      const result = await signInWithPopup(auth, googleProvider)
+      await handleGoogleUserResult(result.user, rememberMe);
     } catch (error) {
       setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (!isMobile) {
-        setLoading(false)
-      }
+      setLoading(false)
     }
   }
 

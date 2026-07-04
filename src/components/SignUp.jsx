@@ -16,7 +16,13 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import API_URL from '../api'
 import useTheme from '../custom_hook/UseTheme'
-import { auth, googleProvider, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from '../firebase'
+import {
+  auth,
+  googleProvider,
+  githubProvider,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+} from "../firebase";
 import { getFriendlyErrorMessage } from '../utils/errorHelper'
 
 const SignUp = () => {
@@ -78,37 +84,7 @@ const SignUp = () => {
     setFormData({ ...formData, address: { ...formData.address, city: e.target.value } })
   }
 
-  // Restore form state and handle Google sign-up redirect outcome
-  React.useEffect(() => {
-    const savedForm = localStorage.getItem('signup_form_data_persist');
-    if (savedForm) {
-      try {
-        const parsed = JSON.parse(savedForm);
-        setFormData(parsed);
-      } catch (e) {
-        console.error("Failed to restore signup form data:", e);
-      }
-      localStorage.removeItem('signup_form_data_persist');
-    }
 
-    if (!auth) return;
-
-    const handleRedirectOutcome = async () => {
-      try {
-        setLoading(true);
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          await handleGoogleUserSignUpResult(result.user);
-        }
-      } catch (error) {
-        setMessage({ text: getFriendlyErrorMessage(error), type: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleRedirectOutcome();
-  }, [auth]);
 
   const handleGoogleUserSignUpResult = async (firebaseUser) => {
     const idToken = await firebaseUser.getIdToken()
@@ -140,21 +116,12 @@ const SignUp = () => {
         throw new Error("Firebase Auth is not initialized. Please verify that your VITE_FIREBASE_API_KEY is configured in the environment.")
       }
 
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isMobile) {
-        localStorage.setItem('signup_form_data_persist', JSON.stringify(formData));
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        const result = await signInWithPopup(auth, googleProvider)
-        await handleGoogleUserSignUpResult(result.user);
-      }
+      const result = await signInWithPopup(auth, googleProvider)
+      await handleGoogleUserSignUpResult(result.user);
     } catch (error) {
       setMessage({ text: getFriendlyErrorMessage(error), type: 'error' })
     } finally {
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (!isMobile) {
-        setLoading(false)
-      }
+      setLoading(false)
     }
   }
 

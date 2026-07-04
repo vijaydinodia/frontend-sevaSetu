@@ -8,6 +8,7 @@ import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined'
@@ -32,6 +33,7 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
     { key: 'bookings', label: 'Bookings', icon: <CalendarMonthOutlinedIcon fontSize="small" /> },
     { key: 'reviews', label: 'Reviews', icon: <RateReviewOutlinedIcon fontSize="small" /> },
     { key: 'locations', label: 'Locations', icon: <LocationOnOutlinedIcon fontSize="small" /> },
+    { key: 'sessions', label: 'Active Sessions', icon: <DevicesOutlinedIcon fontSize="small" /> },
   ]
 
   const handleLogout = async () => {

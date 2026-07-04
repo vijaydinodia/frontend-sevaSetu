@@ -15,6 +15,10 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined'
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined'
+import PhoneAndroidOutlinedIcon from '@mui/icons-material/PhoneAndroidOutlined'
+import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined'
+import TabletMacOutlinedIcon from '@mui/icons-material/TabletMacOutlined'
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined'
 import RestoreFromTrashOutlinedIcon from '@mui/icons-material/RestoreFromTrashOutlined'
@@ -56,6 +60,8 @@ const SuperAdminDashborad = () => {
   const [message, setMessage] = useState('')
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [viewingProviderId, setViewingProviderId] = useState(null)
+  const [sessionsData, setSessionsData] = useState(null)
+  const [sessionSearch, setSessionSearch] = useState('')
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     description: '',
@@ -270,6 +276,7 @@ const SuperAdminDashborad = () => {
         reviewRes,
         locationRes,
         statsRes,
+        sessionsRes,
       ] = await Promise.all([
         axios.get(`${API_URL}/superadmin/profile`, getHeaders()),
         axios.get(`${API_URL}/superadmin/user/getall`, getHeaders()),
@@ -280,6 +287,10 @@ const SuperAdminDashborad = () => {
         axios.get(`${API_URL}/superadmin/review/getall`, getHeaders()),
         axios.get(`${API_URL}/location/getall`, getHeaders()),
         axios.get(`${API_URL}/superadmin/dashboard-stats`, getHeaders()),
+        axios.get(`${API_URL}/superadmin/sessions/active`, getHeaders()).catch((err) => {
+          console.warn("Sessions route not active yet:", err.message);
+          return { data: { data: null } };
+        }),
       ])
 
       const profileUser = profileRes.data.data?.user || profileRes.data.data || savedUser
@@ -293,6 +304,7 @@ const SuperAdminDashborad = () => {
       setReviews(reviewRes.data.data || [])
       setLocations(locationRes.data.data || [])
       setDashboardStats(statsRes.data.data || null)
+      setSessionsData(sessionsRes?.data?.data || null)
     } catch (error) {
       setMessage(error.response?.data?.message || error.message)
       if (error.response?.status === 401) {
@@ -1773,6 +1785,212 @@ const SuperAdminDashborad = () => {
                 </div>
               ))}
             </div>
+          </Card>
+        )}
+
+        {activeTab === 'sessions' && (
+          <Card className="p-5">
+            <SectionTitle title="Active Sessions" loading={loading} />
+
+            {!sessionsData ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-6 text-center text-amber-800 dark:bg-amber-950/20 dark:border-amber-900/50 dark:text-amber-400">
+                <p className="text-base font-bold mb-2">⚠️ Session Tracking Not Active Yet</p>
+                <p className="text-sm mb-4">Your backend server is currently running the old version from memory. To activate session tracking, please restart your backend server process in your terminal:</p>
+                <code className="inline-block bg-white dark:bg-zinc-900 border border-amber-200 dark:border-zinc-800 px-4 py-2 rounded-xl text-xs font-mono text-amber-700 dark:text-amber-400 font-bold">
+                  Ctrl + C &amp;&amp; npm run server
+                </code>
+              </div>
+            ) : (
+              <>
+                {/* Stats Cards */}
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Total Users Card */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                        <GroupOutlinedIcon fontSize="small" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase">Total Users</p>
+                        <p className="text-2xl font-bold text-[var(--text-main)]">{sessionsData.totalUsers}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Users Card */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                        <PersonOutlineOutlinedIcon fontSize="small" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase">Active Users</p>
+                        <p className="text-2xl font-bold text-emerald-600">{sessionsData.activeUsersCount}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Sessions Card */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+                        <DevicesOutlinedIcon fontSize="small" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase">Active Sessions</p>
+                        <p className="text-2xl font-bold text-purple-600">{sessionsData.activeSessionsCount}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Device Breakdown Card */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase mb-3">Device Breakdown</p>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-[var(--text-main)]">
+                          <DesktopWindowsOutlinedIcon style={{ fontSize: 16 }} /> Desktop
+                        </span>
+                        <span className="font-bold">{sessionsData.deviceBreakdown?.Desktop || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-[var(--text-main)]">
+                          <PhoneAndroidOutlinedIcon style={{ fontSize: 16 }} /> Mobile
+                        </span>
+                        <span className="font-bold">{sessionsData.deviceBreakdown?.Mobile || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-[var(--text-main)]">
+                          <TabletMacOutlinedIcon style={{ fontSize: 16 }} /> Tablet
+                        </span>
+                        <span className="font-bold">{sessionsData.deviceBreakdown?.Tablet || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* OS & Browser Breakdown */}
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* OS Breakdown */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase mb-3">OS Breakdown</p>
+                    <div className="flex flex-col gap-2">
+                      {Object.entries(sessionsData.osBreakdown || {}).map(([osName, count]) => (
+                        <div key={osName} className="flex items-center justify-between text-sm">
+                          <span className="text-[var(--text-main)]">{osName}</span>
+                          <span className="font-bold text-[var(--text-main)]">{count}</span>
+                        </div>
+                      ))}
+                      {Object.keys(sessionsData.osBreakdown || {}).length === 0 && (
+                        <p className="text-sm text-[var(--text-muted)]">No data yet</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Browser Breakdown */}
+                  <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-shell)] p-4">
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase mb-3">Browser Breakdown</p>
+                    <div className="flex flex-col gap-2">
+                      {Object.entries(sessionsData.browserBreakdown || {}).map(([browserName, count]) => (
+                        <div key={browserName} className="flex items-center justify-between text-sm">
+                          <span className="text-[var(--text-main)]">{browserName}</span>
+                          <span className="font-bold text-[var(--text-main)]">{count}</span>
+                        </div>
+                      ))}
+                      {Object.keys(sessionsData.browserBreakdown || {}).length === 0 && (
+                        <p className="text-sm text-[var(--text-muted)]">No data yet</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="mb-4">
+                  <Input
+                    placeholder="Search sessions by name, email, device, OS, browser, IP..."
+                    value={sessionSearch}
+                    onChange={(e) => setSessionSearch(e.target.value)}
+                  />
+                </div>
+
+                {/* Sessions Table */}
+                <div className="overflow-x-auto rounded-2xl border border-[var(--border-color)]">
+                  <table className="min-w-full text-sm text-[var(--text-main)]">
+                    <thead>
+                      <tr className="border-b border-[var(--border-color)] bg-[var(--bg-shell)]">
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">User</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Email</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Role</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Device</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">OS</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Browser</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">IP</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Location</th>
+                        <th className="p-3 text-left text-xs font-bold text-[var(--text-muted)] uppercase">Login Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sessionsData.sessions.filter((s) => {
+                        const q = sessionSearch.toLowerCase().trim()
+                        if (!q) return true
+                        const userName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase()
+                        const userEmail = s.user?.email?.toLowerCase() || ''
+                        const device = s.deviceType?.toLowerCase() || ''
+                        const os = s.os?.toLowerCase() || ''
+                        const browser = s.browser?.toLowerCase() || ''
+                        const ip = s.ip?.toLowerCase() || ''
+                        const loc = `${s.location?.city || ''} ${s.location?.region || ''} ${s.location?.country || ''}`.toLowerCase()
+                        return userName.includes(q) || userEmail.includes(q) || device.includes(q) || os.includes(q) || browser.includes(q) || ip.includes(q) || loc.includes(q)
+                      }).map((session) => (
+                        <tr key={session._id} className="border-b border-[var(--border-color)] hover:bg-[var(--bg-shell)] transition-colors">
+                          <td className="p-3 font-semibold">
+                            {capitalizeWords(`${session.user?.firstName || ''} ${session.user?.lastName || ''}`.trim()) || 'N/A'}
+                          </td>
+                          <td className="p-3">{session.user?.email || 'N/A'}</td>
+                          <td className="p-3">
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              session.user?.role === 'superAdmin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                              : session.user?.role === 'admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : session.user?.role === 'provider' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                            }`}>
+                              {capitalize(session.user?.role || 'user')}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span className="flex items-center gap-1.5">
+                              {session.deviceType === 'Mobile' && <PhoneAndroidOutlinedIcon style={{ fontSize: 16 }} />}
+                              {session.deviceType === 'Desktop' && <DesktopWindowsOutlinedIcon style={{ fontSize: 16 }} />}
+                              {session.deviceType === 'Tablet' && <TabletMacOutlinedIcon style={{ fontSize: 16 }} />}
+                              {session.deviceType}
+                            </span>
+                          </td>
+                          <td className="p-3">{session.os}</td>
+                          <td className="p-3">{session.browser}</td>
+                          <td className="p-3 font-mono text-xs">{session.ip}</td>
+                          <td className="p-3">
+                            {session.location?.city !== 'Unknown'
+                              ? `${session.location?.city}, ${session.location?.region}, ${session.location?.country}`
+                              : session.location?.city === 'Localhost'
+                                ? 'Localhost'
+                                : 'Unknown'
+                            }
+                          </td>
+                          <td className="p-3 text-xs">
+                            {new Date(session.loginAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                      {sessionsData.sessions.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="p-6 text-center text-[var(--text-muted)]">No active sessions found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </Card>
         )}
       </main>

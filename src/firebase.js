@@ -2,9 +2,8 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
+  GithubAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -23,25 +22,31 @@ const firebaseConfig = {
 let app = null;
 let auth = null;
 let googleProvider = null;
+let githubProvider = null;
 
-if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== "" && !firebaseConfig.apiKey.startsWith("YOUR_")) {
+if (
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey.trim() !== "" &&
+  !firebaseConfig.apiKey.startsWith("YOUR_")
+) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+
     googleProvider = new GoogleAuthProvider();
+    githubProvider = new GithubAuthProvider();
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }
 } else {
-  console.warn("Firebase VITE_FIREBASE_API_KEY is not configured or placeholder. Firebase features will be disabled.");
+  console.warn("Firebase VITE_FIREBASE_API_KEY is not configured.");
 }
 
 export {
   auth,
   googleProvider,
+  githubProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -49,4 +54,3 @@ export {
 };
 
 export default app;
-
