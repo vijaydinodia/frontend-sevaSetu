@@ -16,6 +16,7 @@ import StarRateRoundedIcon from '@mui/icons-material/StarRateRounded'
 import BookmarkAddOutlinedIcon from '@mui/icons-material/BookmarkAddOutlined'
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined'
 import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined'
+import ProviderDetailModal from './ProviderDetailModal'
 
 const serviceDetailsData = {
   "hourly-booking": {
@@ -489,6 +490,9 @@ const ServiceDetails = () => {
   const [activeFaqIndex, setActiveFaqIndex] = useState(null)
   const [shareToast, setShareToast] = useState(false)
 
+  // Modal states
+  const [selectedProviderIdModal, setSelectedProviderIdModal] = useState(null)
+
   // Booking states
   const [selectedService, setSelectedService] = useState(null)
   const [bookingForm, setBookingForm] = useState({
@@ -853,8 +857,12 @@ const ServiceDetails = () => {
                         key={ps._id}
                         className={`p-5 border ${cardTheme} rounded-[24px] flex flex-col justify-between hover:shadow-lg transition duration-200`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="h-12 w-12 rounded-full bg-zinc-100 overflow-hidden shrink-0">
+                        <div 
+                          className="flex items-start gap-4 cursor-pointer group"
+                          onClick={() => setSelectedProviderIdModal(ps.provider?._id || ps.provider)}
+                          title="Click to view provider profile, ratings & reviews"
+                        >
+                          <div className="h-12 w-12 rounded-full bg-zinc-100 overflow-hidden shrink-0 group-hover:ring-2 group-hover:ring-amber-500 transition">
                             {ps.provider?.user?.profileImage ? (
                               <img src={ps.provider.user.profileImage} alt="profile" className="w-full h-full object-cover" />
                             ) : (
@@ -865,11 +873,11 @@ const ServiceDetails = () => {
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <h5 className="font-bold text-[15px] truncate">
+                            <h5 className="font-bold text-[15px] truncate group-hover:text-amber-500 transition">
                               {ps.provider?.businessName ? capitalizeWords(ps.provider.businessName) : capitalizeWords(`${ps.provider?.user?.firstName} ${ps.provider?.user?.lastName}`)}
                             </h5>
-                            <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-1 flex-wrap">
-                              <span className="flex items-center gap-0.5 text-amber-500 font-bold">
+                            <div className="flex items-center gap-2 text-xs text-[#6B7280] mt-1 flex-wrap">
+                              <span className="flex items-center gap-0.5 text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full">
                                 <StarRateRoundedIcon fontSize="inherit" />
                                 {ps.provider?.averageRating || '0.0'}
                               </span>
@@ -884,13 +892,22 @@ const ServiceDetails = () => {
                             <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Price</span>
                             <span className="text-xl font-black text-[#16A34A]">₹{ps.price || ps.service?.basePrice}</span>
                           </div>
-                          <Button
-                            onClick={() => handleBookClick(ps)}
-                            variant="gradient"
-                            className="bg-[#16A34A] hover:bg-[#15803D] text-white px-5 h-10 text-xs font-bold rounded-xl"
-                          >
-                            Book Partner
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => setSelectedProviderIdModal(ps.provider?._id || ps.provider)}
+                              variant="outline"
+                              className="px-3 h-10 text-xs font-bold rounded-xl border-amber-500/40 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                            >
+                              Reviews & Profile
+                            </Button>
+                            <Button
+                              onClick={() => handleBookClick(ps)}
+                              variant="gradient"
+                              className="bg-[#16A34A] hover:bg-[#15803D] text-white px-4 h-10 text-xs font-bold rounded-xl"
+                            >
+                              Book Partner
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}
@@ -1056,6 +1073,14 @@ const ServiceDetails = () => {
             </form>
           </Card>
         </div>
+      )}
+
+      {/* Provider Details & Reviews Modal */}
+      {selectedProviderIdModal && (
+        <ProviderDetailModal
+          providerId={selectedProviderIdModal}
+          onClose={() => setSelectedProviderIdModal(null)}
+        />
       )}
 
       <Footer />

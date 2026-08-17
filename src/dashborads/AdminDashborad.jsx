@@ -50,6 +50,7 @@ const AdminDashborad = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [viewingProviderId, setViewingProviderId] = useState(null)
+  const [selectedDocs, setSelectedDocs] = useState(null)
 
   // for bookings by provider view
   const [selectedProvider, setSelectedProvider] = useState(null)
