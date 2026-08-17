@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
-  GithubAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -22,7 +21,6 @@ const firebaseConfig = {
 let app = null;
 let auth = null;
 let googleProvider = null;
-let githubProvider = null;
 
 if (
   firebaseConfig.apiKey &&
@@ -34,9 +32,6 @@ if (
     auth = getAuth(app);
 
     googleProvider = new GoogleAuthProvider();
-
-    githubProvider = new GithubAuthProvider();
-    githubProvider.addScope("user:email"); // required fix
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }
@@ -47,7 +42,6 @@ if (
 export {
   auth,
   googleProvider,
-  githubProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

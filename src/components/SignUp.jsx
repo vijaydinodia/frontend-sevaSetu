@@ -5,7 +5,6 @@ import { Country, State, City } from "country-state-city";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import HourglassEmptyOutlinedIcon from "@mui/icons-material/HourglassEmptyOutlined";
 import GoogleIcon from "@mui/icons-material/Google";
-import GitHubIcon from "@mui/icons-material/GitHub";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
@@ -19,7 +18,6 @@ import useTheme from "../custom_hook/UseTheme";
 import {
   auth,
   googleProvider,
-  githubProvider,
   createUserWithEmailAndPassword,
   signInWithPopup,
 } from "../firebase";
@@ -167,49 +165,6 @@ const SignUp = () => {
       await handleGoogleUserSignUpResult(result.user);
     } catch (error) {
       setMessage({ text: getFriendlyErrorMessage(error), type: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGithubSignUp = async () => {
-    setLoading(true);
-    setMessage({ text: "", type: "" });
-
-    try {
-      if (!auth) {
-        throw new Error("Firebase Auth is not initialized.");
-      }
-
-      const result = await signInWithPopup(auth, githubProvider);
-      const firebaseUser = result.user;
-      const idToken = await firebaseUser.getIdToken();
-
-      localStorage.setItem("firebaseToken", idToken);
-      localStorage.setItem("firebaseUser", JSON.stringify(firebaseUser));
-
-      const res = await axios.post(`${API_URL}/auth/firebase/github`, {
-        token: idToken,
-        role: "user",
-        address: formData.address,
-        phone: formData.phone || undefined,
-      });
-
-      if (res.data.token) localStorage.setItem("token", res.data.token);
-      if (res.data.user)
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      setMessage({
-        text: res.data.message || "GitHub signup successful",
-        type: "success",
-      });
-
-      setTimeout(() => navigate("/"), 1200);
-    } catch (error) {
-      setMessage({
-        text: getFriendlyErrorMessage(error),
-        type: "error",
-      });
     } finally {
       setLoading(false);
     }
@@ -650,15 +605,6 @@ const SignUp = () => {
                   title="Sign up with Google"
                 >
                   <GoogleIcon className="text-red-500" fontSize="medium" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGithubSignUp}
-                  disabled={loading}
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl border transition hover:scale-105 cursor-pointer shadow-sm border-zinc-700 bg-[#24292e] text-white hover:bg-[#2f363d]"
-                  title="Sign up with GitHub"
-                >
-                  <GitHubIcon fontSize="medium" />
                 </button>
               </div>
             </div>

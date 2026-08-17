@@ -6,7 +6,6 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined'
 import GoogleIcon from '@mui/icons-material/Google'
-import GitHubIcon from '@mui/icons-material/GitHub'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
 import API_URL from '../api'
@@ -267,27 +266,6 @@ const Login = () => {
           >
             <GoogleIcon className="text-red-500" fontSize="small" />
             Continue with Google
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
-              if (!clientId) {
-                setMessage({ text: 'GitHub OAuth is not configured. Please set VITE_GITHUB_CLIENT_ID in your environment.', type: 'error' })
-                return
-              }
-              window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`
-            }}
-            disabled={loading}
-            className={`flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border font-semibold transition cursor-pointer ${
-              isLight
-                ? 'border-zinc-200 bg-[#24292e] text-white hover:bg-[#2f363d]'
-                : 'border-zinc-700 bg-[#24292e] text-white hover:bg-[#2f363d]'
-            }`}
-          >
-            <GitHubIcon fontSize="small" />
-            Continue with GitHub
           </button>
 
           {/* Sign up link */}
